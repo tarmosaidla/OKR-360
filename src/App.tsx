@@ -1,0 +1,81 @@
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { AuthProvider } from './context/AuthContext'
+import { CycleProvider } from './context/CycleContext'
+import { TweaksProvider } from './context/TweaksContext'
+import { OrgProvider } from './context/OrgContext'
+import { ProtectedRoute } from './components/auth/ProtectedRoute'
+import { AppShell } from './components/layout/AppShell'
+import { LoginPage } from './pages/auth/LoginPage'
+import { SignupPage } from './pages/auth/SignupPage'
+import { DashboardPage } from './pages/DashboardPage'
+import { OKRsPage } from './pages/OKRsPage'
+import { KPIsPage } from './pages/KPIsPage'
+import { ScorecardPage } from './pages/ScorecardPage'
+import { OneOnOnesPage } from './pages/OneOnOnesPage'
+import { OrgStructurePage } from './pages/OrgStructurePage'
+import { MyFocusPage } from './pages/MyFocusPage'
+import { MyContributionPage } from './pages/MyContributionPage'
+import { UnitPage } from './pages/UnitPage'
+import { MyUnitsPage } from './pages/MyUnitsPage'
+import { CheckInPage } from './pages/CheckInPage'
+import { TeamCheckinPage } from './pages/TeamCheckinPage'
+import { CascadePage } from './pages/CascadePage'
+import { UserManagementPage } from './pages/UserManagementPage'
+import { ReviewPage } from './pages/ReviewPage'
+import { TeamReviewPage } from './pages/TeamReviewPage'
+import { CyclesPage } from './pages/CyclesPage'
+import { CycleSummaryPage } from './pages/CycleSummaryPage'
+import { NotificationPreferencesPage } from './pages/NotificationPreferencesPage'
+import { AnalyticsPage } from './pages/AnalyticsPage'
+import { SecurityPage } from './pages/SecurityPage'
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <TweaksProvider>
+        <AuthProvider>
+          <OrgProvider>
+            <CycleProvider>
+              <Routes>
+                {/* Public routes */}
+                <Route path="/login"  element={<LoginPage />} />
+                <Route path="/signup" element={<SignupPage />} />
+
+                {/* Protected routes inside AppShell */}
+                <Route element={<ProtectedRoute />}>
+                  <Route element={<AppShell />}>
+                    <Route index element={<Navigate to="/dashboard" replace />} />
+                    <Route path="/dashboard"          element={<DashboardPage />} />
+                    <Route path="/okrs"               element={<OKRsPage />} />
+                    <Route path="/kpis"               element={<KPIsPage />} />
+                    <Route path="/scorecard"          element={<ScorecardPage />} />
+                    <Route path="/1on1s"              element={<OneOnOnesPage />} />
+                    <Route path="/settings/structure" element={<OrgStructurePage />} />
+                    <Route path="/my-focus"           element={<MyFocusPage />} />
+                    <Route path="/my-contribution"    element={<MyContributionPage />} />
+                    <Route path="/units/:id"           element={<UnitPage />} />
+                    <Route path="/settings/my-units"   element={<MyUnitsPage />} />
+                    <Route path="/check-in"            element={<CheckInPage />} />
+                    <Route path="/check-in/team"        element={<TeamCheckinPage />} />
+                    <Route path="/cascade"             element={<CascadePage />} />
+                    <Route path="/settings/users"     element={<UserManagementPage />} />
+                    <Route path="/review"             element={<ReviewPage />} />
+                    <Route path="/review/team"        element={<TeamReviewPage />} />
+                    <Route path="/cycles"             element={<CyclesPage />} />
+                    <Route path="/cycles/:id/summary"           element={<CycleSummaryPage />} />
+                    <Route path="/settings/notifications"      element={<NotificationPreferencesPage />} />
+                    <Route path="/settings/security"           element={<SecurityPage />} />
+                    <Route path="/analytics"                   element={<AnalyticsPage />} />
+                  </Route>
+                </Route>
+
+                {/* Fallback */}
+                <Route path="*" element={<Navigate to="/dashboard" replace />} />
+              </Routes>
+            </CycleProvider>
+          </OrgProvider>
+        </AuthProvider>
+      </TweaksProvider>
+    </BrowserRouter>
+  )
+}

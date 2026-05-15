@@ -1,0 +1,7 @@
+@import "./cadence.css";
+
+/* Reset #root to full width — cadence uses its own grid layout */
+#root {
+  width: 100%;
+  min-height: 100svh;
+}

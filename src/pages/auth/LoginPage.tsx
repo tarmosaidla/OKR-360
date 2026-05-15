@@ -1,0 +1,77 @@
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { Icon } from '../../components/cadence/Icon'
+import { useAuth } from '../../context/AuthContext'
+
+export function LoginPage() {
+  const { signIn } = useAuth()
+  const navigate = useNavigate()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+    try {
+      await signIn(email, password)
+      navigate('/dashboard')
+    } catch {
+      setError('Incorrect email or password.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="cd-auth-screen">
+      <div className="cd-auth-card">
+        <div className="cd-auth-brand">
+          <Icon name="sparkle" size={28} />
+          <span className="cd-auth-brand-name">Cadence</span>
+        </div>
+        <h1 className="cd-auth-title">Welcome back</h1>
+        <p className="cd-auth-sub">Sign in to your workspace</p>
+
+        <form onSubmit={handleSubmit} className="cd-auth-form">
+          <div className="cd-field">
+            <label className="cd-label" htmlFor="email">Email</label>
+            <input
+              id="email"
+              className="cd-input"
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="you@company.com"
+              required
+              autoFocus
+            />
+          </div>
+          <div className="cd-field">
+            <label className="cd-label" htmlFor="password">Password</label>
+            <input
+              id="password"
+              className="cd-input"
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+            />
+          </div>
+          {error && <p className="cd-auth-error">{error}</p>}
+          <button className="cd-btn cd-btn--primary cd-btn--full" type="submit" disabled={loading}>
+            {loading ? 'Signing in…' : 'Sign in'}
+          </button>
+        </form>
+
+        <p className="cd-auth-foot">
+          No account?{' '}
+          <Link to="/signup">Sign up</Link>
+        </p>
+      </div>
+    </div>
+  )
+}

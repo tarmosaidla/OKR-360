@@ -1,0 +1,487 @@
+import { useState, useRef, useCallback, useEffect } from 'react'
+import { useCycle } from '../context/CycleContext'
+import { useOneOnOnes } from '../hooks/useOneOnOnes'
+import { Avatar } from '../components/cadence/Avatar'
+import { ConfidenceCell } from '../components/cadence/ConfidenceCell'
+import { Sparkline } from '../components/cadence/Sparkline'
+import { Icon } from '../components/cadence/Icon'
+import { confidenceColor } from '../lib/colors'
+import { happinessLabel } from '../lib/cadenceUtils'
+import { supabase } from '../lib/supabase'
+import type { OneOnOneEntry, Person, CadenceObjective } from '../types/cadence'
+
+// ── Happiness track (header — shows last 4 values as ConfidenceCell row) ──
+
+function HappinessTrackRow({ values }: { values: (number | null)[] }) {
+  const last4 = values.filter(v => v != null).slice(-4) as number[]
+  if (last4.length === 0) return <span style={{ fontSize: 12, color: 'var(--ink-faint)' }}>No data yet</span>
+  return (
+    <div style={{ display: 'flex', gap: 3 }}>
+      {last4.map((v, i) => <ConfidenceCell key={i} value={v} size={22} />)}
+    </div>
+  )
+}
+
+// ── Field component with auto-save ────────────────────────────────────────
+
+interface FieldProps {
+  label: string
+  placeholder: string
+  value: string
+  onChange: (v: string) => void
+  example?: string
+  rows?: number
+}
+
+function Field({ label, placeholder, value, onChange, example, rows = 3 }: FieldProps) {
+  return (
+    <label className="cd-field">
+      <span className="cd-field-lbl">{label}</span>
+      <textarea
+        className="cd-field-input"
+        placeholder={placeholder}
+        value={value}
+        rows={rows}
+        onChange={e => onChange(e.target.value)}
+      />
+      {example && <span className="cd-field-eg">e.g. {example}</span>}
+    </label>
+  )
+}
+
+// ── Personal catch-up tab ─────────────────────────────────────────────────
+
+function PersonalCatchup({ entry, onChange }: {
+  entry: Partial<OneOnOneEntry>
+  onChange: (fields: Partial<OneOnOneEntry>) => void
+}) {
+  const happy = entry.happiness ?? 7
+
+  return (
+    <div className="cd-oo-body">
+      <div className="cd-oo-goal">
+        <Icon name="info" size={14} />
+        <span><strong>Goal.</strong> Get a real read on the human, then on the work. Two minutes, four prompts.</span>
+      </div>
+
+      <div className="cd-oo-grid">
+        <Field
+          label="Personal · highlights"
+          placeholder="A great moment outside work…"
+          value={entry.personal_highlight ?? ''}
+          onChange={v => onChange({ personal_highlight: v })}
+        />
+        <Field
+          label="Professional · highlights"
+          placeholder="A win at work this week…"
+          value={entry.professional_highlight ?? ''}
+          onChange={v => onChange({ professional_highlight: v })}
+          example="Insights beta opened to 5 new teams — best NPS so far."
+        />
+        <Field
+          label="Personal · low points"
+          placeholder="Anything weighing on you…"
+          value={entry.personal_low ?? ''}
+          onChange={v => onChange({ personal_low: v })}
+        />
+        <Field
+          label="Professional · low points"
+          placeholder="A frustration at work…"
+          value={entry.professional_low ?? ''}
+          onChange={v => onChange({ professional_low: v })}
+        />
+      </div>
+
+      <div className="cd-oo-happy">
+        <div className="cd-oo-happy-l">
+          <div className="cd-oo-happy-q">How happy do you feel right now?</div>
+          <div className="cd-oo-happy-sub">Honest beats optimistic. Trend matters more than any single week.</div>
+        </div>
+        <div className="cd-oo-happy-r">
+          <div className="cd-oo-happy-scale">
+            {[1,2,3,4,5,6,7,8,9,10].map(n => (
+              <button
+                key={n}
+                type="button"
+                className={'cd-oo-happy-pt ' + (happy === n ? 'is-on' : '')}
+                onClick={() => onChange({ happiness: n })}
+                style={{ '--c': confidenceColor(n) } as React.CSSProperties}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+          <div className="cd-oo-happy-label">
+            <span className="cd-num">{happy}/10</span>
+            <span className="cd-num-faint">— {happinessLabel(happy)}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="cd-oo-followup">
+        <Field
+          label={happy >= 7
+            ? `What would make this an ${happy + 1}/10?`
+            : 'What would move this up by one point?'}
+          placeholder="One specific thing…"
+          value={entry.happiness_followup ?? ''}
+          onChange={v => onChange({ happiness_followup: v })}
+        />
+      </div>
+    </div>
+  )
+}
+
+// ── Work tab ──────────────────────────────────────────────────────────────
+
+function WorkAgenda({ entry, onChange }: {
+  entry: Partial<OneOnOneEntry>
+  onChange: (fields: Partial<OneOnOneEntry>) => void
+}) {
+  return (
+    <div className="cd-oo-body">
+      <div className="cd-oo-grid">
+        <Field
+          label="Wins this week"
+          placeholder="Where did you make real progress?"
+          value={entry.work_wins ?? ''}
+          onChange={v => onChange({ work_wins: v })}
+          example="Cut the dashboard query plan from 3 joins to 1. p95 down 40ms."
+        />
+        <Field
+          label="Blockers"
+          placeholder="What's in your way?"
+          value={entry.work_blockers ?? ''}
+          onChange={v => onChange({ work_blockers: v })}
+        />
+        <Field
+          label="What I need from my manager"
+          placeholder="Help, cover, an intro, a decision…"
+          value={entry.work_needs_manager ?? ''}
+          onChange={v => onChange({ work_needs_manager: v })}
+        />
+        <Field
+          label="Topics to discuss"
+          placeholder="Add an item to the agenda…"
+          value={entry.work_topics ?? ''}
+          onChange={v => onChange({ work_topics: v })}
+        />
+      </div>
+    </div>
+  )
+}
+
+// ── OKRs & KPIs tab ───────────────────────────────────────────────────────
+
+function OKRsAgenda({ person, cycleId }: { person: Person; cycleId: string | null }) {
+  const [objs, setObjs] = useState<CadenceObjective[]>([])
+
+  useEffect(() => {
+    if (!person.id || !cycleId) return
+    supabase
+      .from('objectives')
+      .select('id, title, owner_id, confidence')
+      .eq('cycle_id', cycleId)
+      .eq('owner_id', person.id)
+      .then(({ data }) => setObjs((data ?? []) as any[]))
+  }, [person.id, cycleId])
+
+  const currentWeekIdx = Math.min((objs[0]?.confidence?.length ?? 1) - 1, 6)
+
+  return (
+    <div className="cd-oo-body">
+      <div className="cd-oo-okrs">
+        <div className="cd-oo-okrs-hd">
+          <span>Objective</span>
+          <span>Now</span>
+          <span>Trend</span>
+          <span>Talk about</span>
+        </div>
+        {objs.length === 0 && (
+          <p className="cd-empty-hint" style={{ padding: '16px 0' }}>No objectives for {person.name.split(' ')[0]} this cycle.</p>
+        )}
+        {objs.map(o => (
+          <div key={o.id} className="cd-oo-okrs-row">
+            <span className="cd-oo-okrs-title">{o.title}</span>
+            <span>
+              <ConfidenceCell value={(o.confidence ?? [])[currentWeekIdx] ?? null} size={24} />
+            </span>
+            <span>
+              <Sparkline
+                values={(o.confidence ?? []).filter((v: any) => v != null) as number[]}
+                width={100}
+                height={22}
+                stroke="var(--accent)"
+              />
+            </span>
+            <span>
+              <button type="button" className="cd-btn cd-btn-ghost cd-btn-tiny">+ Discuss</button>
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Feedback tab ──────────────────────────────────────────────────────────
+
+function FeedbackAgenda({ person, entry, onChange }: {
+  person: Person
+  entry: Partial<OneOnOneEntry>
+  onChange: (fields: Partial<OneOnOneEntry>) => void
+}) {
+  const firstName = person.name.split(' ')[0]
+  return (
+    <div className="cd-oo-body">
+      <div className="cd-oo-grid">
+        <Field
+          label={`Feedback for ${firstName}`}
+          placeholder="Specific. Recent. Actionable."
+          value={entry.feedback_for_report ?? ''}
+          onChange={v => onChange({ feedback_for_report: v })}
+          example="Liked how you ran the migration kickoff — the rollback plan made everyone calmer."
+        />
+        <Field
+          label={`Feedback from ${firstName}`}
+          placeholder={`What ${firstName} wants you to know`}
+          value={entry.feedback_from_report ?? ''}
+          onChange={v => onChange({ feedback_from_report: v })}
+        />
+      </div>
+    </div>
+  )
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────
+
+type TabId = 'personal' | 'work' | 'okrs' | 'feedback'
+
+export function OneOnOnesPage() {
+  const { activeCycle } = useCycle()
+  const {
+    people, selectedId, setSelectedId,
+    draft, past, loading, sessionsLoading,
+    saveEntry, submitDraft,
+  } = useOneOnOnes()
+
+  const [tab, setTab] = useState<TabId>('personal')
+  const [localEntry, setLocalEntry] = useState<Partial<OneOnOneEntry>>({})
+  const [lastSaved, setLastSaved] = useState<Date | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const selectedPerson = people.find(p => p.id === selectedId) ?? null
+
+  // Sync local entry from draft when draft changes
+  useEffect(() => {
+    if (draft?.entry) setLocalEntry({ ...draft.entry })
+    else setLocalEntry({})
+  }, [draft?.id])
+
+  // Debounced auto-save
+  const handleEntryChange = useCallback((fields: Partial<OneOnOneEntry>) => {
+    setLocalEntry(prev => ({ ...prev, ...fields }))
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(async () => {
+      if (!draft?.id) return
+      await saveEntry(draft.id, fields)
+      setLastSaved(new Date())
+    }, 800)
+  }, [draft?.id, saveEntry])
+
+  async function handleSubmit() {
+    if (!draft) return
+    setSubmitting(true)
+    try { await submitDraft() } finally { setSubmitting(false) }
+  }
+
+  const pastHappiness = past
+    .map(s => s.entry?.happiness ?? s.happiness)
+    .filter(v => v != null) as number[]
+
+  if (loading) return <div className="cd-page"><p className="cd-loading">Loading 1:1s…</p></div>
+
+  return (
+    <div className="cd-page">
+      {/* Page header */}
+      <header className="cd-pgh">
+        <div>
+          <div className="cd-pgh-eyebrow">1:1 Conversations</div>
+          <h1 className="cd-pgh-title">A better 30 minutes.</h1>
+          <p className="cd-pgh-sub">A shared prep doc, last meeting's notes one click away, and a happiness trend you can actually feel.</p>
+        </div>
+        <div className="cd-pg-act">
+          <button type="button" className="cd-btn cd-btn-secondary">
+            <Icon name="calendar" size={14} /> Reschedule
+          </button>
+          {draft && (
+            <button
+              type="button"
+              className="cd-btn cd-btn-primary"
+              disabled={submitting}
+              onClick={handleSubmit}
+            >
+              {submitting ? 'Submitting…' : 'Submit prep'}
+            </button>
+          )}
+        </div>
+      </header>
+
+      <div className="cd-oo-layout">
+        {/* Left sidebar */}
+        <aside className="cd-oo-side">
+          <div className="cd-oo-side-hd">People</div>
+          {people.map(p => (
+            <button
+              key={p.id}
+              type="button"
+              className={'cd-oo-tab ' + (selectedId === p.id ? 'is-on' : '')}
+              onClick={() => setSelectedId(p.id)}
+            >
+              <Avatar person={p} size={28} />
+              <div>
+                <div className="cd-oo-tab-name">{p.name}</div>
+                <div className="cd-oo-tab-meta">{p.role}</div>
+              </div>
+            </button>
+          ))}
+
+          {selectedPerson && (
+            <>
+              <div className="cd-oo-side-hd cd-oo-side-hd-2">
+                History · {selectedPerson.name.split(' ')[0]}
+              </div>
+              {sessionsLoading && <p className="cd-loading" style={{ padding: '8px 14px', fontSize: 12 }}>Loading…</p>}
+              {past.map(m => (
+                <button key={m.id} type="button" className="cd-oo-hist">
+                  <div className="cd-oo-hist-date">
+                    {m.scheduled_at
+                      ? new Date(m.scheduled_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+                      : '—'}
+                  </div>
+                  <div className="cd-oo-hist-text">
+                    <ConfidenceCell value={m.entry?.happiness ?? m.happiness ?? null} size={18} />
+                    <span>
+                      {m.summary?.slice(0, 70) ?? ''}
+                      {m.summary && m.summary.length > 70 ? '…' : ''}
+                    </span>
+                  </div>
+                </button>
+              ))}
+              {!sessionsLoading && past.length === 0 && (
+                <p className="cd-empty-hint" style={{ padding: '8px 14px', fontSize: 12 }}>No past sessions yet.</p>
+              )}
+            </>
+          )}
+
+          {people.length === 0 && (
+            <p className="cd-empty-hint" style={{ padding: '12px' }}>No 1:1 partners found.</p>
+          )}
+        </aside>
+
+        {/* Main panel */}
+        <main className="cd-oo-main">
+          {selectedPerson ? (
+            <div className="cd-card" style={{ padding: 0 }}>
+              {/* Meeting header */}
+              <div className="cd-oo-mhd">
+                <div className="cd-oo-mhd-l">
+                  <Avatar person={selectedPerson} size={44} />
+                  <div>
+                    <div className="cd-oo-mhd-name">{selectedPerson.name}</div>
+                    <div className="cd-oo-mhd-meta">
+                      <Icon name="calendar" size={12} />
+                      {draft?.scheduled_at
+                        ? new Date(draft.scheduled_at).toLocaleDateString('en-GB', { weekday: 'long', hour: '2-digit', minute: '2-digit' })
+                        : 'No session scheduled'}
+                    </div>
+                  </div>
+                </div>
+                <div className="cd-oo-mhd-trend">
+                  <div className="cd-oo-mhd-trend-lbl">Happiness · last {Math.min(4, pastHappiness.length)} weeks</div>
+                  <HappinessTrackRow values={pastHappiness} />
+                </div>
+              </div>
+
+              {/* Tabs */}
+              <div className="cd-oo-tabs">
+                {([
+                  { id: 'personal', label: 'Personal catch-up' },
+                  { id: 'work',     label: 'Work' },
+                  { id: 'okrs',     label: 'OKRs & KPIs' },
+                  { id: 'feedback', label: 'Feedback' },
+                ] as { id: TabId; label: string }[]).map(t => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    className={'cd-oo-tabbtn ' + (tab === t.id ? 'is-on' : '')}
+                    onClick={() => setTab(t.id)}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Tab content */}
+              {tab === 'personal' && (
+                <PersonalCatchup
+                  entry={localEntry}
+                  onChange={handleEntryChange}
+                />
+              )}
+              {tab === 'work' && (
+                <WorkAgenda
+                  entry={localEntry}
+                  onChange={handleEntryChange}
+                />
+              )}
+              {tab === 'okrs' && (
+                <OKRsAgenda
+                  person={selectedPerson}
+                  cycleId={activeCycle?.id ?? null}
+                />
+              )}
+              {tab === 'feedback' && (
+                <FeedbackAgenda
+                  person={selectedPerson}
+                  entry={localEntry}
+                  onChange={handleEntryChange}
+                />
+              )}
+
+              {/* Footer */}
+              <div className="cd-oo-foot">
+                <div className="cd-oo-foot-status">
+                  <Icon name="check" size={13} />
+                  {lastSaved
+                    ? `Draft auto-saved · ${lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                    : 'Draft auto-saved · just now'}
+                </div>
+                <div className="cd-oo-foot-act">
+                  <button type="button" className="cd-btn cd-btn-ghost">Discard draft</button>
+                  <button type="button" className="cd-btn cd-btn-secondary">
+                    Share with {selectedPerson.name.split(' ')[0]}
+                  </button>
+                  <button
+                    type="button"
+                    className="cd-btn cd-btn-primary"
+                    disabled={!draft || submitting}
+                    onClick={handleSubmit}
+                  >
+                    {submitting ? 'Submitting…' : 'Submit prep'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="cd-um-empty-detail">
+              <Icon name="chat" size={32} />
+              <div>Select a person to start a 1:1</div>
+            </div>
+          )}
+        </main>
+      </div>
+    </div>
+  )
+}

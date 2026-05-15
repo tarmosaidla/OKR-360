@@ -1,0 +1,45 @@
+import { supabase } from '../lib/supabase'
+import type { Unit, Level } from '../types/cadence'
+
+export async function getUnits(): Promise<Unit[]> {
+  const { data, error } = await supabase
+    .from('units')
+    .select('id, name, level_id, parent_id, position')
+    .order('position', { ascending: true })
+  if (error) throw error
+  return (data ?? []) as Unit[]
+}
+
+export async function saveUnits(units: Unit[]): Promise<void> {
+  // Delete removed units, upsert remaining
+  const { error } = await supabase
+    .from('units')
+    .upsert(units.map((u, i) => ({ ...u, position: i })))
+  if (error) throw error
+}
+
+export async function deleteUnit(id: string): Promise<void> {
+  // Children will have parent_id set to null by DB cascade
+  const { error } = await supabase.from('units').delete().eq('id', id)
+  if (error) throw error
+}
+
+export async function createUnit(unit: Omit<Unit, 'id'>): Promise<Unit> {
+  const { data, error } = await supabase
+    .from('units')
+    .insert(unit)
+    .select()
+    .single()
+  if (error) throw error
+  return data as Unit
+}
+
+export async function getUnit(unitId: string): Promise<Unit & { level?: Level }> {
+  const { data, error } = await supabase
+    .from('units')
+    .select('id, name, level_id, parent_id, position, level:levels(id, name, color, position, enabled)')
+    .eq('id', unitId)
+    .single()
+  if (error) throw error
+  return data as unknown as Unit & { level?: Level }
+}
