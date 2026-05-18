@@ -325,11 +325,13 @@ export function DashboardPage() {
       .then(({ data }) => setRetro((data ?? [])[0] as Retro ?? null))
   }, [primaryUnit])
 
-  // Computed for the eyebrow
-  const isoWeek = getISOWeek(new Date())
-  const weeksInQ = 13
-  const qStart = [1, 14, 27, 40][quarter - 1] ?? 1
-  const weekOfQ = Math.max(1, Math.min(weeksInQ, isoWeek - qStart + 1))
+  // Computed for the eyebrow — use cycle start/end dates for accuracy
+  const weeksInQ = activeCycle?.start_date && activeCycle?.end_date
+    ? Math.max(1, Math.round((new Date(activeCycle.end_date).getTime() - new Date(activeCycle.start_date).getTime()) / (7 * 24 * 60 * 60 * 1000)))
+    : 13
+  const weekOfQ = activeCycle?.start_date
+    ? Math.max(1, Math.min(weeksInQ, Math.floor((Date.now() - new Date(activeCycle.start_date).getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1))
+    : 1
   const eyebrow = activeCycle
     ? `${activeCycle.label} · Week ${weekOfQ} of ${weeksInQ}`
     : undefined
