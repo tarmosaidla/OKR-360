@@ -3344,3 +3344,56 @@ kbd.cd-kbd {
   padding: 6px 10px; border-radius: var(--radius-sm);
   background: var(--bg);
 }
+
+/* ─── Tab bar ──────────────────────────────────────────────────────────── */
+.cd-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 24px;
+}
+.cd-tab-btn {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color 120ms, border-color 120ms;
+  margin-bottom: -1px;
+  white-space: nowrap;
+}
+.cd-tab-btn:hover { color: var(--ink); }
+.cd-tab-btn.is-on {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+/* Hide the PageHeader of inner pages when rendered inside a tab */
+.cd-tab-content .cd-pgh { display: none; }
+
+/* ─── Review banner ────────────────────────────────────────────────────── */
+.cd-review-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 36px;
+  background: color-mix(in oklab, var(--warn) 10%, var(--bg));
+  border-bottom: 1px solid color-mix(in oklab, var(--warn) 25%, transparent);
+  color: var(--ink);
+  font-size: 13px;
+}
+.cd-review-banner-msg { flex: 1; }
+.cd-review-banner-icon { color: var(--warn); flex-shrink: 0; }
+.cd-review-banner-dismiss {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--ink-soft);
+  display: grid;
+  place-items: center;
+  padding: 4px;
+  border-radius: 4px;
+}
+.cd-review-banner-dismiss:hover { color: var(--ink); background: color-mix(in oklab, var(--ink) 6%, transparent); }

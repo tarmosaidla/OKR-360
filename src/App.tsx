@@ -12,7 +12,6 @@ import { OKRsPage } from './pages/OKRsPage'
 import { KPIsPage } from './pages/KPIsPage'
 import { ScorecardPage } from './pages/ScorecardPage'
 import { OneOnOnesPage } from './pages/OneOnOnesPage'
-import { OrgStructurePage } from './pages/OrgStructurePage'
 import { MyFocusPage } from './pages/MyFocusPage'
 import { MyContributionPage } from './pages/MyContributionPage'
 import { UnitPage } from './pages/UnitPage'
@@ -28,6 +27,10 @@ import { CycleSummaryPage } from './pages/CycleSummaryPage'
 import { NotificationPreferencesPage } from './pages/NotificationPreferencesPage'
 import { AnalyticsPage } from './pages/AnalyticsPage'
 import { SecurityPage } from './pages/SecurityPage'
+import { ObjectivesPage } from './pages/ObjectivesPage'
+import { PeoplePage } from './pages/PeoplePage'
+import { StructurePage } from './pages/StructurePage'
+import { AccountPage } from './pages/AccountPage'
 
 export default function App() {
   return (
@@ -50,7 +53,7 @@ export default function App() {
                     <Route path="/kpis"               element={<KPIsPage />} />
                     <Route path="/scorecard"          element={<ScorecardPage />} />
                     <Route path="/1on1s"              element={<OneOnOnesPage />} />
-                    <Route path="/settings/structure" element={<OrgStructurePage />} />
+                    <Route path="/settings/structure" element={<StructurePage />} />
                     <Route path="/my-focus"           element={<MyFocusPage />} />
                     <Route path="/my-contribution"    element={<MyContributionPage />} />
                     <Route path="/units/:id"           element={<UnitPage />} />
@@ -66,6 +69,9 @@ export default function App() {
                     <Route path="/settings/notifications"      element={<NotificationPreferencesPage />} />
                     <Route path="/settings/security"           element={<SecurityPage />} />
                     <Route path="/analytics"                   element={<AnalyticsPage />} />
+                    <Route path="/objectives"                  element={<ObjectivesPage />} />
+                    <Route path="/people"                      element={<PeoplePage />} />
+                    <Route path="/settings/account"            element={<AccountPage />} />
                   </Route>
                 </Route>
 
