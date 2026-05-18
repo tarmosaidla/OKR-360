@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { Level, Unit } from '../../types/cadence'
+import { usePageActionStore } from '../../stores/pageActionStore'
 
 interface UnitNodeData extends Unit {
   children: UnitNodeData[]
@@ -128,9 +129,18 @@ interface UnitsTreeProps {
 
 export function UnitsTree({ units, levels, onChange }: UnitsTreeProps) {
   const [levelFilter, setLevelFilter] = useState<string | null>(null)
+  const { addUnitOpen, setAddUnitOpen } = usePageActionStore()
 
   const tree = buildUnitTree(units)
   const flat = flattenWithDepth(tree)
+
+  useEffect(() => {
+    if (addUnitOpen) {
+      addRoot()
+      setAddUnitOpen(false)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [addUnitOpen])
 
   function addRoot() {
     const topLevel = levels.filter(l => l.enabled)[0] ?? null

@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
+import { usePageActionStore } from '../stores/pageActionStore'
 import { useUserManagement } from '../hooks/useUserManagement'
 import { useOrg } from '../context/OrgContext'
 import { useAuth } from '../context/AuthContext'
@@ -294,6 +295,14 @@ function UserList({
   const [tab, setTab] = useState<FilterTab>('all')
   const [search, setSearch] = useState('')
   const [showCreate, setShowCreate] = useState(false)
+  const { addUserOpen, setAddUserOpen } = usePageActionStore()
+
+  useEffect(() => {
+    if (addUserOpen) {
+      setShowCreate(true)
+      setAddUserOpen(false)
+    }
+  }, [addUserOpen, setAddUserOpen])
 
   const filtered = useMemo(() => {
     let list = users

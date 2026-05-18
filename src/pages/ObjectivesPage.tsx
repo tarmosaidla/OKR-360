@@ -1,7 +1,12 @@
 import { useSearchParams } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
+import { objectivesService } from '../services/objectives.service'
+import { ObjectiveForm } from '../components/objectives/ObjectiveForm'
+import { usePageActionStore } from '../stores/pageActionStore'
 import { MyFocusPage } from './MyFocusPage'
 import { CascadePage } from './CascadePage'
 import { MyContributionPage } from './MyContributionPage'
+import type { CreateObjectiveInput } from '../types'
 
 const TABS = [
   { id: 'my-okrs',    label: 'My OKRs'   },
@@ -12,9 +17,16 @@ const TABS = [
 export function ObjectivesPage() {
   const [params, setParams] = useSearchParams()
   const tab = params.get('tab') ?? 'my-okrs'
+  const { user } = useAuth()
+  const { objectivesModalOpen, setObjectivesModalOpen } = usePageActionStore()
 
   function setTab(id: string) {
     setParams({ tab: id }, { replace: true })
+  }
+
+  async function handleCreate(data: CreateObjectiveInput) {
+    if (!user) return
+    await objectivesService.create({ ...data, owner_id: user.id })
   }
 
   return (
@@ -36,6 +48,12 @@ export function ObjectivesPage() {
         {tab === 'cascade'   && <CascadePage />}
         {tab === 'alignment' && <MyContributionPage />}
       </div>
+
+      <ObjectiveForm
+        open={objectivesModalOpen}
+        onClose={() => setObjectivesModalOpen(false)}
+        onSubmit={handleCreate}
+      />
     </>
   )
 }

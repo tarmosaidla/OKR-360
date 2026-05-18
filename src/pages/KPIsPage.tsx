@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { usePageActionStore } from '../stores/pageActionStore'
 import { useAuth } from '../context/AuthContext'
 import { useCycle } from '../context/CycleContext'
 import { useKPIs } from '../hooks/useKPIs'
@@ -270,6 +271,14 @@ export function KPIsPage() {
   const { kpis, loading, isAdmin, updateActual, reload } = useKPIs(activeCycle?.id ?? null)
   const [groupBy, setGroupBy] = useState<GroupBy>('role')
   const [addOpen, setAddOpen] = useState(false)
+  const { kpiModalOpen, setKpiModalOpen } = usePageActionStore()
+
+  useEffect(() => {
+    if (kpiModalOpen) {
+      setAddOpen(true)
+      setKpiModalOpen(false)
+    }
+  }, [kpiModalOpen, setKpiModalOpen])
 
   if (loading) return <div className="cd-page"><p className="cd-loading">Loading…</p></div>
 

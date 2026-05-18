@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
+import { usePageActionStore } from '../stores/pageActionStore'
 import { useCycle } from '../context/CycleContext'
 import { useOneOnOnes } from '../hooks/useOneOnOnes'
 import { Avatar } from '../components/cadence/Avatar'
@@ -269,6 +270,28 @@ export function OneOnOnesPage() {
   const [localEntry, setLocalEntry] = useState<Partial<OneOnOneEntry>>({})
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [submitting, setSubmitting] = useState(false)
+
+  // New 1:1 person picker
+  const { newMeetingOpen, setNewMeetingOpen } = usePageActionStore()
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const [pickerSearch, setPickerSearch] = useState('')
+  const [allPeople, setAllPeople] = useState<Person[]>([])
+
+  useEffect(() => {
+    if (newMeetingOpen) {
+      setPickerOpen(true)
+      setNewMeetingOpen(false)
+      // Fetch all profiles for picker
+      supabase.from('profiles').select('id, full_name, avatar_url, role')
+        .order('full_name').then(({ data }) => {
+          if (data) setAllPeople(data.map((p: any) => {
+            const name = p.full_name ?? '?'
+            const initials = name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()
+            return { id: p.id, name, avatar_url: p.avatar_url ?? null, role: p.role ?? '', initials, color: '#888' }
+          }))
+        })
+    }
+  }, [newMeetingOpen, setNewMeetingOpen])
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const selectedPerson = people.find(p => p.id === selectedId) ?? null
@@ -482,6 +505,55 @@ export function OneOnOnesPage() {
           )}
         </main>
       </div>
+
+      {/* New 1:1 person picker */}
+      {pickerOpen && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200,
+          }}
+          onClick={() => setPickerOpen(false)}
+        >
+          <div
+            style={{
+              background: 'var(--bg-elev)', borderRadius: 12, padding: 24, width: 360,
+              maxHeight: '70vh', display: 'flex', flexDirection: 'column', gap: 16,
+              boxShadow: '0 8px 32px rgba(0,0,0,.2)',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ fontWeight: 600, fontSize: 15 }}>Start a 1:1 with…</div>
+            <input
+              className="cd-input"
+              placeholder="Search by name…"
+              value={pickerSearch}
+              onChange={e => setPickerSearch(e.target.value)}
+              autoFocus
+            />
+            <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {allPeople
+                .filter(p => p.name.toLowerCase().includes(pickerSearch.toLowerCase()))
+                .map(p => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    className="cd-side-link"
+                    style={{ justifyContent: 'flex-start' }}
+                    onClick={() => {
+                      setSelectedId(p.id)
+                      setPickerOpen(false)
+                      setPickerSearch('')
+                    }}
+                  >
+                    <Avatar person={p} size={24} />
+                    <span>{p.name}</span>
+                  </button>
+                ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

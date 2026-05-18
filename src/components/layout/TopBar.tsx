@@ -3,11 +3,11 @@ import { Icon } from '../cadence/Icon'
 import { Kbd } from '../cadence/Kbd'
 import { NotificationBell } from '../cadence/NotificationBell'
 import { CommandPalette } from './CommandPalette'
+import { usePageAction } from '../../hooks/usePageAction'
 import type { AppNotification } from '../../types/cadence'
 
 interface TopBarProps {
   breadcrumb?: string[]
-  onCheckin?: () => void
   notifications?: AppNotification[]
   unreadCount?: number
   onMarkRead?: (id: string) => void
@@ -16,13 +16,13 @@ interface TopBarProps {
 
 export function TopBar({
   breadcrumb = [],
-  onCheckin,
   notifications = [],
   unreadCount = 0,
   onMarkRead,
   onMarkAllRead,
 }: TopBarProps) {
   const [cmdOpen, setCmdOpen] = useState(false)
+  const action = usePageAction()
 
   return (
     <>
@@ -54,10 +54,14 @@ export function TopBar({
             onMarkRead={onMarkRead ?? (() => {})}
             onMarkAllRead={onMarkAllRead ?? (() => {})}
           />
-          {onCheckin && (
-            <button className="cd-btn cd-btn-primary" onClick={onCheckin} type="button">
-              <Icon name="plus" size={14} />
-              Check-in
+          {action && (
+            <button
+              className="cd-btn cd-btn--primary"
+              onClick={action.onClick}
+              type="button"
+            >
+              <Icon name={action.icon} size={14} />
+              {action.label}
             </button>
           )}
         </div>
