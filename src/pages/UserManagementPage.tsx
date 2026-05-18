@@ -653,7 +653,18 @@ export function UserManagementPage() {
   const flatUnits = units.map(u => ({ id: u.id, name: u.name }))
 
   if (loading) return <div className="cd-page"><p className="cd-loading">Loading users…</p></div>
-  if (error) return <div className="cd-page"><div style={{ color: 'var(--bad)', padding: 20 }}>{error}</div></div>
+  if (error) return (
+    <div className="cd-page">
+      <div style={{ color: 'var(--bad)', padding: 20 }}>
+        <strong>Failed to load users</strong><br />
+        <code style={{ fontSize: 12, whiteSpace: 'pre-wrap', display: 'block', marginTop: 8, color: 'var(--ink-mid)' }}>{error}</code>
+        <p style={{ fontSize: 12, marginTop: 8, color: 'var(--ink-soft)' }}>
+          Check the browser console for full error details (code, hint, details).
+          Most likely cause: run migration <code>20260515_010_schema_backfill.sql</code> in Supabase.
+        </p>
+      </div>
+    </div>
+  )
 
   return (
     <div className="cd-page" style={{ gap: 0, overflow: 'hidden', height: '100%', paddingBottom: 0 }}>

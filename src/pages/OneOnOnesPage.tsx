@@ -1,6 +1,8 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { usePageActionStore } from '../stores/pageActionStore'
 import { useCycle } from '../context/CycleContext'
+import { useAuth } from '../context/AuthContext'
 import { useOneOnOnes } from '../hooks/useOneOnOnes'
 import { Avatar } from '../components/cadence/Avatar'
 import { ConfidenceCell } from '../components/cadence/ConfidenceCell'
@@ -9,6 +11,7 @@ import { Icon } from '../components/cadence/Icon'
 import { confidenceColor } from '../lib/colors'
 import { happinessLabel } from '../lib/cadenceUtils'
 import { supabase } from '../lib/supabase'
+import { createDraftSession } from '../services/oneOnOnes.service'
 import type { OneOnOneEntry, Person, CadenceObjective } from '../types/cadence'
 
 // ── Happiness track (header — shows last 4 values as ConfidenceCell row) ──
@@ -260,6 +263,8 @@ type TabId = 'personal' | 'work' | 'okrs' | 'feedback'
 
 export function OneOnOnesPage() {
   const { activeCycle } = useCycle()
+  const { user } = useAuth()
+  const navigate = useNavigate()
   const {
     people, selectedId, setSelectedId,
     draft, past, loading, sessionsLoading,
@@ -276,22 +281,45 @@ export function OneOnOnesPage() {
   const [pickerOpen, setPickerOpen] = useState(false)
   const [pickerSearch, setPickerSearch] = useState('')
   const [allPeople, setAllPeople] = useState<Person[]>([])
+  const [pickerCreating, setPickerCreating] = useState(false)
+
+  // Load all people on mount (needed for picker)
+  useEffect(() => {
+    supabase.from('profiles').select('id, full_name, avatar_url, role')
+      .order('full_name').then(({ data }) => {
+        if (!data) return
+        setAllPeople(data.map((p: any) => {
+          const name = p.full_name ?? '?'
+          const initials = name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()
+          return { id: p.id, name, avatar_url: p.avatar_url ?? null, role: p.role ?? '', initials, color: '#888' }
+        }))
+      })
+  }, [])
 
   useEffect(() => {
     if (newMeetingOpen) {
       setPickerOpen(true)
+      setPickerSearch('')
       setNewMeetingOpen(false)
-      // Fetch all profiles for picker
-      supabase.from('profiles').select('id, full_name, avatar_url, role')
-        .order('full_name').then(({ data }) => {
-          if (data) setAllPeople(data.map((p: any) => {
-            const name = p.full_name ?? '?'
-            const initials = name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()
-            return { id: p.id, name, avatar_url: p.avatar_url ?? null, role: p.role ?? '', initials, color: '#888' }
-          }))
-        })
     }
   }, [newMeetingOpen, setNewMeetingOpen])
+
+  async function handlePickerSelect(person: Person) {
+    if (!user?.id) return
+    setPickerCreating(true)
+    try {
+      await createDraftSession(user.id, person.id)
+    } catch {
+      // Session might already exist — that's fine
+    } finally {
+      setPickerCreating(false)
+    }
+    setSelectedId(person.id)
+    setPickerOpen(false)
+    setPickerSearch('')
+    navigate('/people?tab=1on1s')
+  }
+
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const selectedPerson = people.find(p => p.id === selectedId) ?? null
@@ -509,47 +537,81 @@ export function OneOnOnesPage() {
       {/* New 1:1 person picker */}
       {pickerOpen && (
         <div
-          style={{
-            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200,
-          }}
-          onClick={() => setPickerOpen(false)}
+          className="cd-modal-backdrop"
+          onClick={() => { setPickerOpen(false); setPickerSearch('') }}
         >
-          <div
-            style={{
-              background: 'var(--bg-elev)', borderRadius: 12, padding: 24, width: 360,
-              maxHeight: '70vh', display: 'flex', flexDirection: 'column', gap: 16,
-              boxShadow: '0 8px 32px rgba(0,0,0,.2)',
-            }}
-            onClick={e => e.stopPropagation()}
-          >
-            <div style={{ fontWeight: 600, fontSize: 15 }}>Start a 1:1 with…</div>
-            <input
-              className="cd-input"
-              placeholder="Search by name…"
-              value={pickerSearch}
-              onChange={e => setPickerSearch(e.target.value)}
-              autoFocus
-            />
-            <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {allPeople
-                .filter(p => p.name.toLowerCase().includes(pickerSearch.toLowerCase()))
-                .map(p => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    className="cd-side-link"
-                    style={{ justifyContent: 'flex-start' }}
-                    onClick={() => {
-                      setSelectedId(p.id)
-                      setPickerOpen(false)
-                      setPickerSearch('')
-                    }}
-                  >
-                    <Avatar person={p} size={24} />
-                    <span>{p.name}</span>
-                  </button>
-                ))}
+          <div className="cd-modal" style={{ maxWidth: 400 }} onClick={e => e.stopPropagation()}>
+            <div className="cd-modal-hd">
+              <span className="cd-modal-title">Start a 1:1 with…</span>
+              <button
+                type="button"
+                className="cd-btn-icon"
+                onClick={() => { setPickerOpen(false); setPickerSearch('') }}
+              >
+                <Icon name="x" size={15} />
+              </button>
+            </div>
+            <div className="cd-modal-body" style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <input
+                className="cd-um-input"
+                placeholder="Search by name…"
+                value={pickerSearch}
+                onChange={e => setPickerSearch(e.target.value)}
+                autoFocus
+              />
+              <div style={{ overflowY: 'auto', maxHeight: 340, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {(() => {
+                  const filtered = allPeople.filter(p =>
+                    p.id !== user?.id &&
+                    p.name.toLowerCase().includes(pickerSearch.toLowerCase())
+                  )
+                  if (filtered.length === 0 && allPeople.length <= 1) {
+                    return (
+                      <div style={{ padding: '16px 4px', fontSize: 13, color: 'var(--ink-soft)', textAlign: 'center' }}>
+                        No team members found.{' '}
+                        <a
+                          href="/settings/users"
+                          style={{ color: 'var(--accent)', textDecoration: 'underline' }}
+                          onClick={() => { setPickerOpen(false); navigate('/settings/users') }}
+                        >
+                          Add users first.
+                        </a>
+                      </div>
+                    )
+                  }
+                  if (filtered.length === 0) {
+                    return (
+                      <p style={{ padding: '12px 4px', fontSize: 13, color: 'var(--ink-faint)' }}>
+                        No people match "{pickerSearch}"
+                      </p>
+                    )
+                  }
+                  return filtered.map(p => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      disabled={pickerCreating}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px',
+                        borderRadius: 8, border: 'none', background: 'none', cursor: 'pointer',
+                        textAlign: 'left', width: '100%', transition: 'background 0.15s',
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'color-mix(in oklab, var(--ink) 5%, transparent)')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                      onClick={() => handlePickerSelect(p)}
+                    >
+                      <Avatar person={p} size={32} />
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--ink)', lineHeight: 1.3 }}>{p.name}</div>
+                        {p.role && (
+                          <div style={{ fontSize: 11, color: 'var(--ink-soft)', marginTop: 1 }}>{p.role}</div>
+                        )}
+                      </div>
+                      {pickerCreating && <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--ink-faint)' }}>…</span>}
+                    </button>
+                  ))
+                })()}
+              </div>
             </div>
           </div>
         </div>

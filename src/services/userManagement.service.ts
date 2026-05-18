@@ -38,26 +38,55 @@ export interface AdminScope {
 // ── Fetch all users (scoped by RLS + app logic) ───────────────────────────
 
 export async function listUsers(): Promise<ManagedUser[]> {
-  const { data, error } = await supabase
+  // Step 1: fetch profiles (without new columns that may not exist yet)
+  const { data: profileData, error: profileError } = await supabase
     .from('profiles')
-    .select(`
-      id, full_name, email, avatar_url, role, job_title,
-      is_global_admin, status, invited_at, last_active_at,
-      memberships:people_units(
-        id, unit_id, role, is_primary,
-        unit:units(
-          id, name,
-          level:levels(id, name, color, position)
-        )
-      )
-    `)
+    .select('id, full_name, email, avatar_url, role, job_title, is_global_admin, status, invited_at, last_active_at')
     .order('full_name', { ascending: true })
 
-  if (error) throw error
+  if (profileError) {
+    // Log full error details to help diagnose column/RLS issues
+    console.error('[listUsers] profiles error:', {
+      message: profileError.message,
+      code: (profileError as any).code,
+      details: (profileError as any).details,
+      hint: (profileError as any).hint,
+    })
+    // Fallback: try with minimal columns only
+    const { data: minData, error: minError } = await supabase
+      .from('profiles')
+      .select('id, full_name, avatar_url')
+      .order('full_name', { ascending: true })
+    if (minError) throw new Error(`profiles: ${minError.message} (code: ${(minError as any).code})`)
+    return ((minData ?? []) as any[]).map(p => ({
+      id: p.id,
+      full_name: p.full_name ?? p.id,
+      email: null,
+      avatar_url: p.avatar_url ?? null,
+      role: null,
+      job_title: null,
+      is_global_admin: false,
+      status: 'active' as UserStatus,
+      invited_at: null,
+      last_active_at: null,
+      memberships: [],
+    }))
+  }
 
-  return ((data ?? []) as any[]).map(p => ({
+  // Step 2: fetch memberships with units (no levels join — simpler)
+  const { data: memberData } = await supabase
+    .from('people_units')
+    .select('id, person_id, unit_id, role, is_primary, unit:units(id, name, level_id)')
+
+  const membersByPerson: Record<string, any[]> = {}
+  for (const m of (memberData ?? []) as any[]) {
+    if (!membersByPerson[m.person_id]) membersByPerson[m.person_id] = []
+    membersByPerson[m.person_id].push(m)
+  }
+
+  return ((profileData ?? []) as any[]).map(p => ({
     id: p.id,
-    full_name: p.full_name,
+    full_name: p.full_name ?? p.id,
     email: p.email ?? null,
     avatar_url: p.avatar_url ?? null,
     role: p.role ?? null,
@@ -66,13 +95,13 @@ export async function listUsers(): Promise<ManagedUser[]> {
     status: (p.status ?? 'active') as UserStatus,
     invited_at: p.invited_at ?? null,
     last_active_at: p.last_active_at ?? null,
-    memberships: ((p.memberships ?? []) as any[]).map((m: any) => ({
+    memberships: (membersByPerson[p.id] ?? []).map((m: any) => ({
       id: m.id,
       unit_id: m.unit_id,
       unit_name: m.unit?.name ?? '?',
-      unit_level_color: m.unit?.level?.color ?? null,
-      unit_level_name: m.unit?.level?.name ?? null,
-      unit_level_depth: m.unit?.level?.position ?? null,
+      unit_level_color: null,
+      unit_level_name: null,
+      unit_level_depth: null,
       role: m.role as UnitRole,
       is_primary: m.is_primary,
     })),

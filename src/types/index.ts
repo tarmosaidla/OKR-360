@@ -45,6 +45,8 @@ export interface Objective {
   description: string | null
   owner_id: string
   team_id: string | null
+  unit_id?: string | null
+  parent_objective_id?: string | null
   cycle_id: string
   status: ObjectiveStatus
   created_at: string
@@ -72,6 +74,8 @@ export interface CreateObjectiveInput {
   title: string
   description?: string
   team_id?: string | null
+  unit_id?: string | null
+  parent_objective_id?: string | null
   cycle_id: string
   status: ObjectiveStatus
 }
