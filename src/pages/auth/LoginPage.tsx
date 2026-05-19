@@ -30,7 +30,7 @@ export function LoginPage() {
       <div className="cd-auth-card">
         <div className="cd-auth-brand">
           <Icon name="sparkle" size={28} />
-          <span className="cd-auth-brand-name">Cadence</span>
+          <span className="cd-auth-brand-name">OKR 360</span>
         </div>
         <h1 className="cd-auth-title">Welcome back</h1>
         <p className="cd-auth-sub">Sign in to your workspace</p>
@@ -69,7 +69,7 @@ export function LoginPage() {
 
         <p className="cd-auth-foot">
           No account?{' '}
-          <Link to="/signup">Sign up</Link>
+          <Link to="/register">Create one free</Link>
         </p>
       </div>
     </div>

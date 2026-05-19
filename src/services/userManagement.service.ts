@@ -212,28 +212,36 @@ export async function resetUserPassword(personId: string, newPassword: string): 
   if (json.error) throw new Error(json.error)
 }
 
-// ── Legacy invite (kept for resend flow, now a no-op shell) ──────────────
+// ── Email invitation (magic-link) ─────────────────────────────────────────
 
 export async function inviteUser(payload: {
   email: string
-  full_name: string
-  job_title?: string
   unit_id: string
   role: UnitRole
-  invited_by?: string
+  org_id: string
 }): Promise<{ person_id: string }> {
-  // Legacy path — redirect to createUser with a placeholder password
-  // Callers should migrate to createUser directly
-  return createUser({
-    name: payload.full_name,
-    email: payload.email,
-    password: Math.random().toString(36).slice(2) + 'Aa1!',
-    unit_id: payload.unit_id,
-    role: payload.role,
-    must_change_password: true,
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) throw new Error('Not authenticated')
+
+  const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-create-user`
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify({ action: 'invite', ...payload }),
   })
+
+  const text = await resp.text()
+  let json: any
+  try { json = JSON.parse(text) } catch {
+    throw new Error(`Edge function returned non-JSON (${resp.status}): ${text.slice(0, 200)}`)
+  }
+  if (json.error) throw new Error(json.error)
+  return { person_id: json.person_id }
 }
 
 export async function resendInvite(_payload: unknown): Promise<void> {
-  // No-op: with direct password creation there is no invite email to resend
+  // No-op: resend not yet implemented (use Supabase dashboard)
 }

@@ -6,8 +6,24 @@ export interface Profile {
   full_name: string
   avatar_url: string | null
   team_id: string | null
+  org_id: string | null
+  status?: string | null
   created_at: string
   must_change_password?: boolean
+}
+
+export interface Organisation {
+  id: string
+  name: string
+  slug: string
+  industry: string | null
+  size: string | null
+  plan: string
+  trial_ends_at: string
+  created_by: string | null
+  created_at: string
+  logo_url: string | null
+  primary_color: string
 }
 
 export interface Team {

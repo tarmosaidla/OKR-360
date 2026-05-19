@@ -62,7 +62,7 @@ export function SidebarPreview({ levels, units }: SidebarPreviewProps) {
       {/* Brand */}
       <div className="cd-prev-brand">
         <span className="cd-prev-brand-icon">✦</span>
-        <span className="cd-prev-brand-name">Cadence</span>
+        <span className="cd-prev-brand-name">OKR 360</span>
       </div>
 
       {/* Nav */}

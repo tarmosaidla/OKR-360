@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useAuth } from '../context/AuthContext'
 import {
   listUsers, getAdminScope,
-  upsertMembership, removeMembership, setUserStatus, createUser, resetUserPassword,
+  upsertMembership, removeMembership, setUserStatus, createUser, resetUserPassword, inviteUser,
   type ManagedUser, type UserStatus, type UnitRole, type AdminScope,
 } from '../services/userManagement.service'
 
@@ -87,6 +87,16 @@ export function useUserManagement() {
     await resetUserPassword(personId, newPassword)
   }
 
+  async function doInviteUser(payload: {
+    email: string
+    unit_id: string
+    role: UnitRole
+    org_id: string
+  }) {
+    await inviteUser(payload)
+    await reload()
+  }
+
   return {
     users: visibleUsers,
     allUsers: users,
@@ -101,6 +111,7 @@ export function useUserManagement() {
     removeMembership: doRemoveMembership,
     setUserStatus: doSetUserStatus,
     createUser: doCreateUser,
+    inviteUser: doInviteUser,
     resetPassword: doResetPassword,
   }
 }

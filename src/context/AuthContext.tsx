@@ -8,6 +8,7 @@ interface AuthContextValue {
   session: Session | null
   user: User | null
   profile: Profile | null
+  orgId: string | null
   loading: boolean
   mustChangePassword: boolean
   signIn: (email: string, password: string) => Promise<void>
@@ -79,10 +80,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const mustChangePassword = profile?.must_change_password ?? false
+  const orgId = profile?.org_id ?? null
 
   return (
     <AuthContext.Provider
-      value={{ session, user, profile, loading, mustChangePassword, signIn, signUp, signOut, refreshProfile }}
+      value={{ session, user, profile, orgId, loading, mustChangePassword, signIn, signUp, signOut, refreshProfile }}
     >
       {children}
     </AuthContext.Provider>

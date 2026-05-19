@@ -3,12 +3,15 @@ import { Outlet } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { TopBar } from './TopBar'
 import { ReviewBanner } from './ReviewBanner'
+import { SampleDataBanner } from './SampleDataBanner'
 import { useNotifications } from '../../hooks/useNotifications'
 import { useReviewCycle } from '../../hooks/useReviewCycle'
+import { useSampleData } from '../../hooks/useSampleData'
 
 export function AppShell() {
   const { notifications, unreadCount, markRead, markAllRead } = useNotifications()
   const { selfAssessmentDue, cycleLabel, reviewClosesAt } = useReviewCycle()
+  const { hasSampleData, clearing, clearSampleData } = useSampleData()
   const [bannerDismissed, setBannerDismissed] = useState(false)
 
   return (
@@ -21,6 +24,7 @@ export function AppShell() {
           onMarkRead={markRead}
           onMarkAllRead={markAllRead}
         />
+        {hasSampleData && <SampleDataBanner onClear={clearSampleData} clearing={clearing} />}
         {selfAssessmentDue && !bannerDismissed && (
           <ReviewBanner
             cycleLabel={cycleLabel}

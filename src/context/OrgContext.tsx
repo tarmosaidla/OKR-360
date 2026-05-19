@@ -3,7 +3,10 @@ import type { ReactNode } from 'react'
 import { getLevels } from '../services/levels.service'
 import { getUnits } from '../services/units.service'
 import { getOrgSettings } from '../services/orgSettings.service'
+import { supabase } from '../lib/supabase'
+import { useAuth } from './AuthContext'
 import type { Level, Unit, OrgSettings } from '../types/cadence'
+import type { Organisation } from '../types'
 
 const FALLBACK_LEVELS: Level[] = [
   { id: 'group',    name: 'Group',    color: '#6366f1', position: 0, enabled: true },
@@ -23,22 +26,28 @@ interface OrgContextValue {
   levels: Level[]
   units: Unit[]
   settings: OrgSettings
+  org: Organisation | null
   loading: boolean
   refresh: () => void
+  updateOrg: (patch: Partial<Pick<Organisation, 'name' | 'logo_url' | 'primary_color'>>) => Promise<void>
 }
 
 const OrgContext = createContext<OrgContextValue>({
   levels: FALLBACK_LEVELS,
   units: [],
   settings: FALLBACK_SETTINGS,
+  org: null,
   loading: false,
   refresh: () => {},
+  updateOrg: async () => {},
 })
 
 export function OrgProvider({ children }: { children: ReactNode }) {
+  const { orgId } = useAuth()
   const [levels, setLevels]   = useState<Level[]>(FALLBACK_LEVELS)
   const [units, setUnits]     = useState<Unit[]>([])
   const [settings, setSettings] = useState<OrgSettings>(FALLBACK_SETTINGS)
+  const [org, setOrg] = useState<Organisation | null>(null)
   const [loading, setLoading] = useState(true)
   const [rev, setRev] = useState(0)
 
@@ -46,20 +55,45 @@ export function OrgProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setLoading(true)
+    const orgFetch: Promise<Organisation | null> = orgId
+      ? Promise.resolve(
+          supabase.from('organisations').select('*').eq('id', orgId).single()
+        ).then(r => (r as any).data as Organisation | null).catch(() => null)
+      : Promise.resolve(null)
+
     Promise.all([
       getLevels().catch(() => FALLBACK_LEVELS),
       getUnits().catch(() => []),
       getOrgSettings().catch(() => FALLBACK_SETTINGS),
-    ]).then(([l, u, s]) => {
+      orgFetch,
+    ]).then(([l, u, s, o]) => {
       if (l.length) setLevels(l)
       setUnits(u)
       setSettings(s)
+      setOrg(o)
+      if (o?.primary_color) {
+        document.documentElement.style.setProperty('--brand-color', o.primary_color)
+        document.documentElement.style.setProperty('--accent', o.primary_color)
+      }
       setLoading(false)
     })
-  }, [rev])
+  }, [rev, orgId])
+
+  const updateOrg = useCallback(async (patch: Partial<Pick<Organisation, 'name' | 'logo_url' | 'primary_color'>>) => {
+    if (!orgId) return
+    const { data } = await supabase.from('organisations').update(patch).eq('id', orgId).select().single()
+    if (data) {
+      const updated = data as Organisation
+      setOrg(updated)
+      if (updated.primary_color) {
+        document.documentElement.style.setProperty('--brand-color', updated.primary_color)
+        document.documentElement.style.setProperty('--accent', updated.primary_color)
+      }
+    }
+  }, [orgId])
 
   return (
-    <OrgContext.Provider value={{ levels, units, settings, loading, refresh }}>
+    <OrgContext.Provider value={{ levels, units, settings, org, loading, refresh, updateOrg }}>
       {children}
     </OrgContext.Provider>
   )

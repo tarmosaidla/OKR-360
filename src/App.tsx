@@ -7,6 +7,10 @@ import { ProtectedRoute } from './components/auth/ProtectedRoute'
 import { AppShell } from './components/layout/AppShell'
 import { LoginPage } from './pages/auth/LoginPage'
 import { SignupPage } from './pages/auth/SignupPage'
+import { RegisterPage } from './pages/auth/RegisterPage'
+import { LandingPage } from './pages/LandingPage'
+import { OnboardingWizard } from './pages/onboarding/OnboardingWizard'
+import { ProfileSetupPage } from './pages/onboarding/ProfileSetupPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { OKRsPage } from './pages/OKRsPage'
 import { KPIsPage } from './pages/KPIsPage'
@@ -41,8 +45,16 @@ export default function App() {
             <CycleProvider>
               <Routes>
                 {/* Public routes */}
-                <Route path="/login"  element={<LoginPage />} />
-                <Route path="/signup" element={<SignupPage />} />
+                <Route path="/"          element={<LandingPage />} />
+                <Route path="/login"     element={<LoginPage />} />
+                <Route path="/signup"    element={<SignupPage />} />
+                <Route path="/register"  element={<RegisterPage />} />
+
+                {/* Onboarding — requires auth but org not required */}
+                <Route element={<ProtectedRoute />}>
+                  <Route path="/onboarding"         element={<OnboardingWizard />} />
+                  <Route path="/onboarding/profile" element={<ProfileSetupPage />} />
+                </Route>
 
                 {/* Protected routes inside AppShell */}
                 <Route element={<ProtectedRoute />}>
@@ -76,7 +88,7 @@ export default function App() {
                 </Route>
 
                 {/* Fallback */}
-                <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </CycleProvider>
           </OrgProvider>

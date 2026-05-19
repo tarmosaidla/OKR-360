@@ -6,14 +6,15 @@ const corsHeaders = {
 }
 
 interface CreatePayload {
-  action?: 'create' | 'reset-password'
-  // create
+  action?: 'create' | 'invite' | 'reset-password'
+  // create / invite
   name?: string
   email?: string
   password?: string
   unit_id?: string
   role?: string
   must_change_password?: boolean
+  org_id?: string
   // reset-password
   person_id?: string
   new_password?: string
@@ -85,6 +86,54 @@ Deno.serve(async (req: Request) => {
       )
     }
 
+    // ── Action: invite ────────────────────────────────────────────────────
+    if (action === 'invite') {
+      const { email, unit_id, role = 'member', org_id } = payload
+      if (!email || !unit_id || !org_id) throw new Error('email, unit_id, and org_id are required')
+
+      const siteUrl = Deno.env.get('SITE_URL') ?? 'http://localhost:5173'
+      const { data: inviteData, error: inviteErr } = await supabaseAdmin.auth.admin.inviteUserByEmail(
+        email,
+        { redirectTo: `${siteUrl}/onboarding/profile` },
+      )
+      if (inviteErr) throw inviteErr
+
+      const userId = inviteData.user.id
+
+      // Upsert profile with pending status + org assignment
+      await supabaseAdmin.from('profiles').upsert({
+        id: userId,
+        email,
+        org_id,
+        status: 'pending',
+        must_change_password: false,
+      }, { onConflict: 'id' })
+
+      // Assign primary unit membership
+      await supabaseAdmin.from('people_units').insert({
+        person_id: userId,
+        unit_id,
+        role,
+        is_primary: true,
+        org_id,
+      }).then(() => {}) // ignore conflict if already exists
+
+      // Log to audit_log
+      await supabaseAdmin.from('audit_log').insert({
+        org_id,
+        actor_id: caller.id,
+        action: 'user.invited',
+        target_type: 'profile',
+        target_id: userId,
+        metadata: { email, unit_id, role },
+      }).then(() => {})
+
+      return new Response(
+        JSON.stringify({ person_id: userId, success: true }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      )
+    }
+
     // ── Action: create ────────────────────────────────────────────────────
     const { name, email, password, unit_id, role = 'member', must_change_password = true } = payload
     if (!name || !email || !password || !unit_id) {
@@ -122,6 +171,18 @@ Deno.serve(async (req: Request) => {
         role,
         is_primary: true,
       })
+
+    // 4. Assign org from caller's profile
+    const { data: callerProf } = await supabaseAdmin
+      .from('profiles').select('org_id').eq('id', caller.id).single()
+    if (callerProf?.org_id) {
+      await supabaseAdmin.from('profiles')
+        .update({ org_id: callerProf.org_id })
+        .eq('id', userId)
+      await supabaseAdmin.from('people_units')
+        .update({ org_id: callerProf.org_id })
+        .eq('person_id', userId)
+    }
 
     return new Response(
       JSON.stringify({ person_id: userId, success: true }),

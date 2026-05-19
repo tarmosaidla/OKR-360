@@ -8,6 +8,20 @@ import { Icon } from '../components/cadence/Icon'
 import { profileToPerson } from '../lib/cadenceUtils'
 import type { ManagedUser, UnitRole, UserStatus } from '../services/userManagement.service'
 
+// ── Relative time helper ──────────────────────────────────────────────────
+
+function relativeTime(iso: string | null): string {
+  if (!iso) return 'Never'
+  const diffMs = Date.now() - new Date(iso).getTime()
+  const diffDays = Math.floor(diffMs / 86400000)
+  if (diffDays === 0) return 'Today'
+  if (diffDays === 1) return 'Yesterday'
+  if (diffDays < 7) return `${diffDays} days ago`
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`
+  if (diffDays < 365) return `${Math.floor(diffDays / 30)}mo ago`
+  return `${Math.floor(diffDays / 365)}y ago`
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────
 
 type FilterTab = 'all' | 'admins' | 'pending'
@@ -16,12 +30,14 @@ const ROLE_LABELS: Record<string, string> = {
   admin: 'Admin', lead: 'Lead', member: 'Member', viewer: 'Viewer', contributor: 'Contributor',
 }
 
-function StatusBadge({ status }: { status: UserStatus }) {
-  const cfg = {
-    active:   { label: 'Active',   color: 'var(--ok)' },
-    pending:  { label: 'Pending',  color: 'var(--warn)' },
-    inactive: { label: 'Inactive', color: 'var(--ink-faint)' },
-  }[status]
+function StatusBadge({ status }: { status: UserStatus | 'demo' }) {
+  const cfgMap: Record<string, { label: string; color: string }> = {
+    active:   { label: 'Active',    color: 'var(--ok)' },
+    pending:  { label: 'Pending',   color: 'var(--warn)' },
+    inactive: { label: 'Suspended', color: 'var(--ink-faint)' },
+    demo:     { label: 'Demo',      color: 'var(--accent)' },
+  }
+  const cfg = cfgMap[status] ?? { label: status, color: 'var(--ink-faint)' }
   return (
     <span className="cd-um-badge" style={{ color: cfg.color, borderColor: `color-mix(in oklab, ${cfg.color} 30%, transparent)` }}>
       {cfg.label}
@@ -100,23 +116,28 @@ function PasswordInput({
   )
 }
 
-// ── Create user form ──────────────────────────────────────────────────────
+// ── Add user form (invite email default, manual password option) ──────────
 
 function CreateUserForm({
   units,
   scopeUnitIds,
   isGlobalAdmin,
   allowedRoles,
+  orgId,
   onCreate,
+  onInvite,
   onCancel,
 }: {
   units: { id: string; name: string }[]
   scopeUnitIds: Set<string>
   isGlobalAdmin: boolean
   allowedRoles: UnitRole[]
+  orgId: string | null
   onCreate: (p: { name: string; email: string; password: string; unit_id: string; role: UnitRole; must_change_password: boolean }) => Promise<void>
+  onInvite: (p: { email: string; unit_id: string; role: UnitRole; org_id: string }) => Promise<void>
   onCancel: () => void
 }) {
+  const [manualMode, setManualMode] = useState(false)
   const [form, setForm] = useState({
     name: '', email: '', password: '', unit_id: '', role: 'member' as UnitRole, must_change_password: true,
   })
@@ -127,7 +148,22 @@ function CreateUserForm({
   const availableUnits = isGlobalAdmin ? units : units.filter(u => scopeUnitIds.has(u.id))
   const strength = passwordStrength(form.password)
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleInvite(e: React.FormEvent) {
+    e.preventDefault()
+    if (!form.email || !form.unit_id) { setErr('Email and unit are required'); return }
+    if (!orgId) { setErr('No organisation found'); return }
+    setSubmitting(true)
+    setErr(null)
+    try {
+      await onInvite({ email: form.email, unit_id: form.unit_id, role: form.role, org_id: orgId })
+      setSuccess(`Invitation sent to ${form.email}. They'll receive a magic-link to set up their account.`)
+    } catch (ex) {
+      setErr(ex instanceof Error ? ex.message : 'Failed to send invitation')
+      setSubmitting(false)
+    }
+  }
+
+  async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
     if (!form.name || !form.email || !form.password || !form.unit_id) {
       setErr('All fields are required'); return
@@ -150,34 +186,55 @@ function CreateUserForm({
       <div className="cd-um-invite-form">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div style={{ color: 'var(--ok)', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
-            <Icon name="check" size={14} /> User created
+            <Icon name="check" size={14} /> {manualMode ? 'User created' : 'Invitation sent'}
           </div>
           <p style={{ fontSize: 13, color: 'var(--ink-mid)', margin: 0 }}>{success}</p>
-          <button type="button" className="cd-btn" onClick={onCancel} style={{ alignSelf: 'flex-start' }}>
-            Done
-          </button>
+          <button type="button" className="cd-btn" onClick={onCancel} style={{ alignSelf: 'flex-start' }}>Done</button>
         </div>
       </div>
     )
   }
 
   return (
-    <form className="cd-um-invite-form" onSubmit={handleSubmit}>
+    <form className="cd-um-invite-form" onSubmit={manualMode ? handleCreate : handleInvite}>
       <div className="cd-um-invite-title">Add user</div>
-      <input
-        className="cd-um-input" placeholder="Full name *" required
-        value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-      />
+
+      {/* Mode toggle */}
+      <div className="cd-um-mode-toggle">
+        <button
+          type="button"
+          className={`cd-um-mode-btn ${!manualMode ? 'is-on' : ''}`}
+          onClick={() => { setManualMode(false); setErr(null) }}
+        >
+          <Icon name="mail" size={12} /> Send email invitation
+        </button>
+        <button
+          type="button"
+          className={`cd-um-mode-btn ${manualMode ? 'is-on' : ''}`}
+          onClick={() => { setManualMode(true); setErr(null) }}
+        >
+          <Icon name="shield" size={12} /> Set password manually
+        </button>
+      </div>
+
+      {manualMode && (
+        <input
+          className="cd-um-input" placeholder="Full name *" required
+          value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+        />
+      )}
       <input
         className="cd-um-input" type="email" placeholder="Email address *" required
         value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
       />
-      <PasswordInput
-        value={form.password}
-        onChange={v => setForm(p => ({ ...p, password: v }))}
-        placeholder="Temporary password *"
-        showStrength
-      />
+      {manualMode && (
+        <PasswordInput
+          value={form.password}
+          onChange={v => setForm(p => ({ ...p, password: v }))}
+          placeholder="Temporary password *"
+          showStrength
+        />
+      )}
       <select
         className="cd-um-select" required
         value={form.unit_id} onChange={e => setForm(p => ({ ...p, unit_id: e.target.value }))}
@@ -191,23 +248,27 @@ function CreateUserForm({
       >
         {allowedRoles.map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
       </select>
-      <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer', padding: '6px 0', borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)' }}>
-        <input
-          type="checkbox"
-          checked={form.must_change_password}
-          onChange={e => setForm(p => ({ ...p, must_change_password: e.target.checked }))}
-        />
-        Require password change on first sign-in
-      </label>
+      {manualMode && (
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer', padding: '6px 0', borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)' }}>
+          <input
+            type="checkbox"
+            checked={form.must_change_password}
+            onChange={e => setForm(p => ({ ...p, must_change_password: e.target.checked }))}
+          />
+          Require password change on first sign-in
+        </label>
+      )}
       {err && <div className="cd-um-error">{err}</div>}
       <div style={{ display: 'flex', gap: 8 }}>
         <button
           type="submit"
           className="cd-btn cd-btn-primary"
-          disabled={submitting || strength.score === 0}
+          disabled={submitting || (manualMode && strength.score === 0)}
           style={{ flex: 1 }}
         >
-          {submitting ? 'Creating…' : 'Create user →'}
+          {submitting
+            ? (manualMode ? 'Creating…' : 'Sending…')
+            : (manualMode ? 'Create user →' : 'Send invitation →')}
         </button>
         <button type="button" className="cd-btn" onClick={onCancel}>Cancel</button>
       </div>
@@ -281,7 +342,9 @@ function UserList({
   units,
   scopeUnitIds,
   allowedRoles,
+  orgId,
   onCreate,
+  onInvite,
 }: {
   users: ManagedUser[]
   selected: string | null
@@ -290,7 +353,9 @@ function UserList({
   units: { id: string; name: string }[]
   scopeUnitIds: Set<string>
   allowedRoles: UnitRole[]
+  orgId: string | null
   onCreate: (p: { name: string; email: string; password: string; unit_id: string; role: UnitRole; must_change_password: boolean }) => Promise<void>
+  onInvite: (p: { email: string; unit_id: string; role: UnitRole; org_id: string }) => Promise<void>
 }) {
   const [tab, setTab] = useState<FilterTab>('all')
   const [search, setSearch] = useState('')
@@ -349,7 +414,9 @@ function UserList({
           scopeUnitIds={scopeUnitIds}
           isGlobalAdmin={isGlobalAdmin}
           allowedRoles={allowedRoles}
+          orgId={orgId}
           onCreate={async payload => { await onCreate(payload); setShowCreate(false) }}
+          onInvite={async payload => { await onInvite(payload); setShowCreate(false) }}
           onCancel={() => setShowCreate(false)}
         />
       )}
@@ -380,7 +447,10 @@ function UserList({
                 </div>
                 <div className="cd-um-list-sub">{u.job_title ?? u.email ?? '—'}</div>
               </div>
-              <StatusBadge status={u.status} />
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+                <StatusBadge status={(u.status as any)} />
+                <span style={{ fontSize: 11, color: 'var(--ink-faint)' }}>{relativeTime(u.last_active_at)}</span>
+              </div>
             </div>
           )
         })}
@@ -637,13 +707,13 @@ function UserDetail({
 // ── Page ──────────────────────────────────────────────────────────────────
 
 export function UserManagementPage() {
-  const { user: authUser } = useAuth()
+  const { user: authUser, orgId } = useAuth()
   const { units } = useOrg()
   const {
     users, loading, error,
     isGlobalAdmin, canManageUnit, allowedRoles,
     scope,
-    upsertMembership, removeMembership, setUserStatus, createUser, resetPassword,
+    upsertMembership, removeMembership, setUserStatus, createUser, inviteUser, resetPassword,
   } = useUserManagement()
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -705,7 +775,9 @@ export function UserManagementPage() {
           units={flatUnits}
           scopeUnitIds={scopeUnitIds}
           allowedRoles={allowedRoles()}
+          orgId={orgId}
           onCreate={createUser}
+          onInvite={inviteUser}
         />
         <div className="cd-um-detail-wrap">
           {selectedUser ? (

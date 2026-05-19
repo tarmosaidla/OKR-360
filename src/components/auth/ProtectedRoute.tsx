@@ -3,7 +3,7 @@ import { useAuth } from '../../context/AuthContext'
 import { PageSpinner } from '../ui/Spinner'
 
 export function ProtectedRoute() {
-  const { session, loading, mustChangePassword } = useAuth()
+  const { session, loading, mustChangePassword, orgId, profile } = useAuth()
   const { pathname } = useLocation()
 
   if (loading) return <PageSpinner />
@@ -12,6 +12,16 @@ export function ProtectedRoute() {
   // Force password change before accessing any other page
   if (mustChangePassword && pathname !== '/settings/security') {
     return <Navigate to="/settings/security?prompt=change" replace />
+  }
+
+  // Invited user who hasn't completed profile setup yet
+  if (orgId && profile?.status === 'pending' && !pathname.startsWith('/onboarding/profile')) {
+    return <Navigate to="/onboarding/profile" replace />
+  }
+
+  // No org yet — send to onboarding (skip if already there)
+  if (!orgId && !pathname.startsWith('/onboarding')) {
+    return <Navigate to="/onboarding" replace />
   }
 
   return <Outlet />

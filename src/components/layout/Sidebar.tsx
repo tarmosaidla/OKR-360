@@ -2,6 +2,7 @@ import { useNavigate, useLocation, NavLink } from 'react-router-dom'
 import { Icon } from '../cadence/Icon'
 import { Avatar } from '../cadence/Avatar'
 import { useAuth } from '../../context/AuthContext'
+import { useOrg } from '../../context/OrgContext'
 import { profileToPerson } from '../../lib/cadenceUtils'
 
 const MAIN_NAV = [
@@ -45,6 +46,29 @@ function NavItem({ to, icon, label }: { to: string; icon: Parameters<typeof Icon
   )
 }
 
+function OrgBrand() {
+  const { org } = useOrg()
+  const initials = org?.name
+    ? org.name.split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase()
+    : '✦'
+  const color = org?.primary_color ?? '#5D5BE6'
+
+  return (
+    <div className="cd-side-brand">
+      <div className="cd-side-org-logo" style={{ background: org?.logo_url ? 'transparent' : color }}>
+        {org?.logo_url
+          ? <img src={org.logo_url} alt={org.name} />
+          : <span>{initials}</span>
+        }
+      </div>
+      <div className="cd-side-brand-text">
+        <div className="cd-side-org-name">{org?.name ?? 'Your Org'}</div>
+        <div className="cd-side-product-name">OKR 360</div>
+      </div>
+    </div>
+  )
+}
+
 export function Sidebar() {
   const { profile, signOut } = useAuth()
   const navigate = useNavigate()
@@ -53,10 +77,7 @@ export function Sidebar() {
   return (
     <nav className="cd-side">
       {/* Brand */}
-      <div className="cd-side-brand">
-        <span className="cd-side-logo"><Icon name="sparkle" size={16} /></span>
-        <span className="cd-side-name">Cadence</span>
-      </div>
+      <OrgBrand />
 
       {/* Main nav */}
       <ul className="cd-side-nav" style={{ listStyle: 'none', margin: 0, padding: 0 }}>

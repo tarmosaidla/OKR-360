@@ -3,7 +3,18 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Icon } from '../../components/cadence/Icon'
 import { useAuth } from '../../context/AuthContext'
 
-export function SignupPage() {
+function passwordStrength(pw: string): { score: number; label: string } {
+  let score = 0
+  if (pw.length >= 8)  score++
+  if (pw.length >= 12) score++
+  if (/[A-Z]/.test(pw)) score++
+  if (/[0-9]/.test(pw)) score++
+  if (/[^A-Za-z0-9]/.test(pw)) score++
+  const labels = ['', 'Weak', 'Fair', 'Good', 'Strong', 'Very strong']
+  return { score, label: labels[score] ?? '' }
+}
+
+export function RegisterPage() {
   const { signUp } = useAuth()
   const navigate = useNavigate()
   const [fullName, setFullName] = useState('')
@@ -12,16 +23,18 @@ export function SignupPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  const strength = passwordStrength(password)
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (password.length < 6) { setError('Password must be at least 6 characters'); return }
+    if (password.length < 8) { setError('Password must be at least 8 characters'); return }
     setLoading(true)
     setError('')
     try {
       await signUp(email, password, fullName)
-      navigate('/dashboard')
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Sign up failed')
+      navigate('/onboarding')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Registration failed')
     } finally {
       setLoading(false)
     }
@@ -34,8 +47,8 @@ export function SignupPage() {
           <Icon name="sparkle" size={28} />
           <span className="cd-auth-brand-name">OKR 360</span>
         </div>
-        <h1 className="cd-auth-title">Create account</h1>
-        <p className="cd-auth-sub">Start your OKR journey</p>
+        <h1 className="cd-auth-title">Create your account</h1>
+        <p className="cd-auth-sub">Start your 14-day free trial — no credit card needed</p>
 
         <form onSubmit={handleSubmit} className="cd-auth-form">
           <div className="cd-field">
@@ -51,14 +64,14 @@ export function SignupPage() {
             />
           </div>
           <div className="cd-field">
-            <label className="cd-label" htmlFor="email">Email</label>
+            <label className="cd-label" htmlFor="email">Work email</label>
             <input
               id="email"
               className="cd-input"
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              placeholder="you@company.com"
+              placeholder="jane@company.com"
               required
             />
           </div>
@@ -70,13 +83,26 @@ export function SignupPage() {
               type="password"
               value={password}
               onChange={e => setPassword(e.target.value)}
-              placeholder="Min. 6 characters"
+              placeholder="Min. 8 characters"
               required
             />
+            {password.length > 0 && (
+              <div className="cd-pw-strength">
+                <div className="cd-pw-bars">
+                  {[1,2,3,4,5].map(i => (
+                    <div
+                      key={i}
+                      className={`cd-pw-bar ${i <= strength.score ? `cd-pw-bar--${strength.score <= 2 ? 'weak' : strength.score <= 3 ? 'fair' : 'strong'}` : ''}`}
+                    />
+                  ))}
+                </div>
+                <span className="cd-pw-label">{strength.label}</span>
+              </div>
+            )}
           </div>
           {error && <p className="cd-auth-error">{error}</p>}
           <button className="cd-btn cd-btn--primary cd-btn--full" type="submit" disabled={loading}>
-            {loading ? 'Creating account…' : 'Create account'}
+            {loading ? 'Creating account…' : 'Get started'}
           </button>
         </form>
 
