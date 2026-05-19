@@ -58,7 +58,6 @@ export default function App() {
                 {/* Protected routes inside AppShell */}
                 <Route element={<ProtectedRoute />}>
                   <Route element={<AppShell />}>
-                    <Route index element={<Navigate to="/dashboard" replace />} />
                     <Route path="/dashboard"          element={<DashboardPage />} />
                     <Route path="/okrs"               element={<OKRsPage />} />
                     <Route path="/kpis"               element={<KPIsPage />} />
