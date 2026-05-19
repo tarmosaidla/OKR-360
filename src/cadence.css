@@ -2379,6 +2379,112 @@ kbd.cd-kbd {
 }
 .cd-form-select:focus { border-color: var(--accent); }
 
+/* ── OKR template picker ─────────────────────────────────────────────────── */
+.cd-obj-quickstart {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.cd-tpl-btn {
+  gap: 5px;
+}
+.cd-tpl-picker {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 0;
+  min-height: 380px;
+}
+.cd-tpl-cats {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-right: 12px;
+  border-right: 1px solid var(--line);
+}
+.cd-tpl-cat-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--ink-mid);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 100ms, color 100ms;
+}
+.cd-tpl-cat-btn:hover { background: var(--bg-elev); color: var(--ink); }
+.cd-tpl-cat-btn.is-on  { background: var(--accent-soft); color: var(--accent); font-weight: 500; }
+.cd-tpl-cat-count {
+  font-size: 11px;
+  color: var(--ink-faint);
+  background: var(--bg-elev);
+  border-radius: 10px;
+  padding: 1px 6px;
+  flex-shrink: 0;
+}
+.cd-tpl-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-left: 16px;
+  overflow-y: auto;
+  max-height: 420px;
+}
+.cd-tpl-card {
+  text-align: left;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: border-color 120ms, background 120ms;
+}
+.cd-tpl-card:hover {
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+}
+.cd-tpl-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 10px;
+}
+.cd-tpl-card-krs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.cd-tpl-card-kr {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--ink-mid);
+}
+.cd-tpl-kr-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--ink-faint);
+  flex-shrink: 0;
+  position: relative;
+  top: -1px;
+}
+.cd-tpl-kr-target {
+  margin-left: auto;
+  flex-shrink: 0;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+}
+
 /* ── AI KR suggestions ───────────────────────────────────────────────────── */
 .cd-ai-suggest-btn {
   color: var(--accent);

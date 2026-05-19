@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import { CdModal } from '../cadence/CdModal'
 import { Icon } from '../cadence/Icon'
+import { TemplatePicker } from './TemplatePicker'
 import { useCycle } from '../../context/CycleContext'
 import { supabase } from '../../lib/supabase'
 import { keyResultsService } from '../../services/keyResults.service'
 import { suggestKRs, type KRSuggestion } from '../../services/aiSuggestions.service'
+import type { OKRTemplate } from '../../data/okrTemplates'
 import type { Objective, CreateObjectiveInput, ObjectiveStatus } from '../../types'
 
 const STATUS_OPTIONS: { value: ObjectiveStatus; label: string }[] = [
@@ -40,11 +42,12 @@ export function ObjectiveForm({ open, onClose, onSubmit, objective }: ObjectiveF
   const [units, setUnits]               = useState<UnitOption[]>([])
   const [parentOpts, setParentOpts]     = useState<ObjOption[]>([])
 
-  // AI suggestions state
+  // KR suggestions (AI or template)
   const [suggestions, setSuggestions]   = useState<KRSuggestion[]>([])
   const [accepted, setAccepted]         = useState<Set<number>>(new Set())
   const [aiLoading, setAiLoading]       = useState(false)
   const [aiError, setAiError]           = useState('')
+  const [tplOpen, setTplOpen]           = useState(false)
 
   useEffect(() => {
     if (!open) return
@@ -90,6 +93,13 @@ export function ObjectiveForm({ open, onClose, onSubmit, objective }: ObjectiveF
     } finally {
       setAiLoading(false)
     }
+  }
+
+  function handleTemplateSelect(tpl: OKRTemplate) {
+    setTitle(tpl.title)
+    setSuggestions(tpl.krs)
+    setAccepted(new Set(tpl.krs.map((_, i) => i)))
+    setAiError('')
   }
 
   function toggleAccepted(i: number) {
@@ -176,25 +186,35 @@ export function ObjectiveForm({ open, onClose, onSubmit, objective }: ObjectiveF
           />
         </label>
 
-        {/* AI suggest button */}
-        {canSuggest && (
-          <div>
+        {/* Quick-start row: template + AI */}
+        {!isEdit && (
+          <div className="cd-obj-quickstart">
             <button
               type="button"
-              className="cd-btn cd-btn--ghost cd-btn--sm cd-ai-suggest-btn"
-              onClick={handleSuggest}
-              disabled={aiLoading}
+              className="cd-btn cd-btn--ghost cd-btn--sm cd-tpl-btn"
+              onClick={() => setTplOpen(true)}
             >
-              <Icon name="sparkle" size={13} />
-              {aiLoading ? 'Generating…' : suggestions.length > 0 ? 'Regenerate KRs' : 'Suggest key results with AI'}
+              <Icon name="grid" size={13} />
+              Use a template
             </button>
-            {aiError && (
-              <p style={{ fontSize: 12, color: 'var(--bad)', margin: '6px 0 0' }}>{aiError}</p>
+            {canSuggest && (
+              <button
+                type="button"
+                className="cd-btn cd-btn--ghost cd-btn--sm cd-ai-suggest-btn"
+                onClick={handleSuggest}
+                disabled={aiLoading}
+              >
+                <Icon name="sparkle" size={13} />
+                {aiLoading ? 'Generating…' : suggestions.length > 0 ? 'Regenerate with AI' : 'Suggest KRs with AI'}
+              </button>
             )}
           </div>
         )}
+        {aiError && (
+          <p style={{ fontSize: 12, color: 'var(--bad)', margin: '-8px 0 0' }}>{aiError}</p>
+        )}
 
-        {/* AI suggestions panel */}
+        {/* KR suggestions panel (from AI or template) */}
         {suggestions.length > 0 && (
           <div className="cd-ai-suggestions">
             <div className="cd-ai-suggestions-header">
@@ -305,6 +325,12 @@ export function ObjectiveForm({ open, onClose, onSubmit, objective }: ObjectiveF
           </button>
         </div>
       </form>
+
+      <TemplatePicker
+        open={tplOpen}
+        onClose={() => setTplOpen(false)}
+        onSelect={handleTemplateSelect}
+      />
     </CdModal>
   )
 }
