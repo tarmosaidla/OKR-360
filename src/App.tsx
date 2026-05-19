@@ -6,7 +6,6 @@ import { OrgProvider } from './context/OrgContext'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 import { AppShell } from './components/layout/AppShell'
 import { LoginPage } from './pages/auth/LoginPage'
-import { SignupPage } from './pages/auth/SignupPage'
 import { RegisterPage } from './pages/auth/RegisterPage'
 import { LandingPage } from './pages/LandingPage'
 import { OnboardingWizard } from './pages/onboarding/OnboardingWizard'
@@ -47,7 +46,7 @@ export default function App() {
                 {/* Public routes */}
                 <Route path="/"          element={<LandingPage />} />
                 <Route path="/login"     element={<LoginPage />} />
-                <Route path="/signup"    element={<SignupPage />} />
+                <Route path="/signup"    element={<Navigate to="/register" replace />} />
                 <Route path="/register"  element={<RegisterPage />} />
 
                 {/* Onboarding — requires auth but org not required */}
