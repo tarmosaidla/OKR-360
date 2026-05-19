@@ -115,3 +115,15 @@ export interface CreateCheckinInput {
   value_at_checkin: number
   notes?: string
 }
+
+export interface Comment {
+  id: string
+  org_id: string
+  author_id: string
+  objective_id: string | null
+  key_result_id: string | null
+  body: string
+  created_at: string
+  updated_at: string
+  author?: { full_name: string; avatar_url: string | null }
+}

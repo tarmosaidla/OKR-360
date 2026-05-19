@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { ChevronDown, ChevronUp, Pencil, Trash2, Plus } from 'lucide-react'
+import { ChevronDown, ChevronUp, Pencil, Trash2, Plus, MessageSquare } from 'lucide-react'
 import { ProgressRing } from './ProgressRing'
 import { ObjectiveStatusBadge } from './ObjectiveStatusBadge'
 import { KeyResultRow } from '../key-results/KeyResultRow'
 import { KeyResultForm } from '../key-results/KeyResultForm'
 import { Avatar } from '../ui/Avatar'
+import { CommentThread } from '../comments/CommentThread'
 import { computeObjectiveProgress } from '../../lib/utils'
 import { keyResultsService } from '../../services/keyResults.service'
 import { checkinsService } from '../../services/checkins.service'
@@ -22,6 +23,7 @@ export function ObjectiveCard({ objective, onEdit, onDelete, onKeyResultAdded }:
   const { user } = useAuth()
   const [expanded, setExpanded] = useState(true)
   const [krOpen, setKrOpen] = useState(false)
+  const [commentsOpen, setCommentsOpen] = useState(false)
   const [keyResults, setKeyResults] = useState<KeyResult[]>(objective.key_results ?? [])
 
   const isOwner = user?.id === objective.owner_id
@@ -117,16 +119,30 @@ export function ObjectiveCard({ objective, onEdit, onDelete, onKeyResultAdded }:
               ))}
             </div>
           )}
-          {isOwner && (
+          <div className="mt-3 flex items-center gap-4">
+            {isOwner && (
+              <button
+                onClick={() => setKrOpen(true)}
+                className="flex items-center gap-1.5 text-xs text-indigo-600 hover:text-indigo-700 font-medium transition-colors"
+              >
+                <Plus size={14} /> Add key result
+              </button>
+            )}
             <button
-              onClick={() => setKrOpen(true)}
-              className="mt-3 flex items-center gap-1.5 text-xs text-indigo-600 hover:text-indigo-700 font-medium transition-colors"
+              onClick={() => setCommentsOpen(o => !o)}
+              className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors"
             >
-              <Plus size={14} /> Add key result
+              <MessageSquare size={13} />
+              {commentsOpen ? 'Hide comments' : 'Comments'}
             </button>
-          )}
+          </div>
           {keyResults.length === 0 && !isOwner && (
             <p className="text-xs text-gray-400 mt-3">No key results yet.</p>
+          )}
+          {commentsOpen && (
+            <div className="mt-3">
+              <CommentThread objectiveId={objective.id} />
+            </div>
           )}
         </div>
       )}

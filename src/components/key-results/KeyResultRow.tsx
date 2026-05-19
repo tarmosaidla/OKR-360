@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { Trash2, MessageSquarePlus } from 'lucide-react'
+import { Trash2, MessageSquarePlus, MessageSquare } from 'lucide-react'
 import { KeyResultProgress } from './KeyResultProgress'
 import { CheckinForm } from '../checkins/CheckinForm'
 import { CheckinHistory } from '../checkins/CheckinHistory'
+import { CommentThread } from '../comments/CommentThread'
 import type { KeyResult, CreateCheckinInput } from '../../types'
 
 interface KeyResultRowProps {
@@ -15,6 +16,7 @@ interface KeyResultRowProps {
 export function KeyResultRow({ keyResult, onCheckin, onDelete, isOwner }: KeyResultRowProps) {
   const [checkinOpen, setCheckinOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
+  const [commentsOpen, setCommentsOpen] = useState(false)
 
   async function handleCheckin(data: CreateCheckinInput) {
     await onCheckin?.(keyResult, data)
@@ -35,8 +37,15 @@ export function KeyResultRow({ keyResult, onCheckin, onDelete, isOwner }: KeyRes
               <KeyResultProgress kr={keyResult} />
             </div>
           </div>
-          {isOwner && (
-            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              onClick={() => setCommentsOpen(o => !o)}
+              className="rounded p-1 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+              title="Comments"
+            >
+              <MessageSquare size={14} />
+            </button>
+            {isOwner && (
               <button
                 onClick={() => setCheckinOpen(true)}
                 className="rounded p-1 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
@@ -44,21 +53,26 @@ export function KeyResultRow({ keyResult, onCheckin, onDelete, isOwner }: KeyRes
               >
                 <MessageSquarePlus size={14} />
               </button>
-              {onDelete && (
-                <button
-                  onClick={() => onDelete(keyResult.id)}
-                  className="rounded p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                  title="Delete"
-                >
-                  <Trash2 size={14} />
-                </button>
-              )}
-            </div>
-          )}
+            )}
+            {isOwner && onDelete && (
+              <button
+                onClick={() => onDelete(keyResult.id)}
+                className="rounded p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                title="Delete"
+              >
+                <Trash2 size={14} />
+              </button>
+            )}
+          </div>
         </div>
         {historyOpen && (
           <div className="ml-2 mb-2 pl-3 border-l-2 border-gray-100">
             <CheckinHistory keyResult={keyResult} />
+          </div>
+        )}
+        {commentsOpen && (
+          <div className="ml-2 mb-2 pl-3 border-l-2 border-gray-100">
+            <CommentThread krId={keyResult.id} />
           </div>
         )}
       </div>

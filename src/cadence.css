@@ -3770,6 +3770,114 @@ kbd.cd-kbd {
   .cd-landing-h1 { font-size: 28px; }
 }
 
+/* ─── Comment thread ────────────────────────────────────────────────────── */
+.cd-comment-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.cd-comment-empty {
+  font-size: 12px;
+  color: var(--ink-faint);
+  margin: 0;
+}
+.cd-comment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.cd-comment {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+.cd-comment-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.cd-comment-body {
+  flex: 1;
+  min-width: 0;
+}
+.cd-comment-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+.cd-comment-author {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.cd-comment-time {
+  font-size: 11px;
+  color: var(--ink-faint);
+}
+.cd-comment-delete {
+  margin-left: auto;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--ink-faint);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 2px;
+  opacity: 0;
+  transition: opacity 120ms, color 120ms;
+}
+.cd-comment:hover .cd-comment-delete { opacity: 1; }
+.cd-comment-delete:hover { color: var(--bad); }
+.cd-comment-text {
+  font-size: 13px;
+  color: var(--ink-mid);
+  line-height: 1.5;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.cd-comment-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cd-comment-input {
+  width: 100%;
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--ink);
+  resize: vertical;
+  min-height: 56px;
+  font-family: inherit;
+  box-sizing: border-box;
+  transition: border-color 120ms;
+}
+.cd-comment-input:focus {
+  outline: none;
+  border-color: var(--accent-line);
+}
+.cd-comment-form-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.cd-comment-hint {
+  font-size: 11px;
+  color: var(--ink-faint);
+}
+
 /* ─── Onboarding wizard ────────────────────────────────────────────────── */
 .cd-onboard-card {
   background: var(--bg-elev);
