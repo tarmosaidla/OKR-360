@@ -28,7 +28,8 @@ export function ObjectivesPage() {
 
   async function handleCreate(data: CreateObjectiveInput) {
     if (!user) return
-    await objectivesService.create({ ...data, owner_id: user.id })
+    const obj = await objectivesService.create({ ...data, owner_id: user.id })
+    return obj.id
   }
 
   return (

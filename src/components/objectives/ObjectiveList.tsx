@@ -12,7 +12,7 @@ interface ObjectiveListProps {
   objectives: Objective[]
   loading: boolean
   canCreate?: boolean
-  onCreate?: (data: CreateObjectiveInput) => Promise<void>
+  onCreate?: (data: CreateObjectiveInput) => Promise<string | void>
   onUpdate?: (id: string, data: UpdateObjectiveInput) => Promise<void>
   onDelete?: (id: string) => Promise<void>
   emptyTitle?: string
@@ -33,8 +33,9 @@ export function ObjectiveList({
   const [editingObj, setEditingObj] = useState<Objective | null>(null)
 
   async function handleCreate(data: CreateObjectiveInput) {
-    await onCreate?.(data)
+    const id = await onCreate?.(data)
     setFormOpen(false)
+    return id
   }
 
   async function handleUpdate(data: CreateObjectiveInput) {

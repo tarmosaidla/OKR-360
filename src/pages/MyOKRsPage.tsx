@@ -20,7 +20,7 @@ export function MyOKRsPage() {
         objectives={objectives}
         loading={loading}
         canCreate
-        onCreate={async (data) => { await createObjective(data) }}
+        onCreate={async (data) => { const obj = await createObjective(data); return obj.id }}
         onUpdate={async (id, data) => { await updateObjective(id, data) }}
         onDelete={deleteObjective}
         emptyTitle="No objectives yet"

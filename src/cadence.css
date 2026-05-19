@@ -2379,6 +2379,75 @@ kbd.cd-kbd {
 }
 .cd-form-select:focus { border-color: var(--accent); }
 
+/* ── AI KR suggestions ───────────────────────────────────────────────────── */
+.cd-ai-suggest-btn {
+  color: var(--accent);
+  border-color: var(--accent-line);
+  gap: 5px;
+}
+.cd-ai-suggest-btn:hover:not(:disabled) {
+  background: var(--accent-soft);
+}
+.cd-ai-suggestions {
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-line);
+  border-radius: var(--radius);
+  padding: 12px;
+}
+.cd-ai-suggestions-header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 10px;
+}
+.cd-ai-suggestions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cd-ai-suggestion-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  cursor: pointer;
+  transition: border-color 120ms;
+}
+.cd-ai-suggestion-row.is-checked {
+  border-color: var(--accent-line);
+  background: #fff;
+}
+.cd-ai-suggestion-chk {
+  margin-top: 2px;
+  accent-color: var(--accent);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.cd-ai-suggestion-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.cd-ai-suggestion-title {
+  font-size: 13px;
+  color: var(--ink);
+  line-height: 1.4;
+}
+.cd-ai-suggestion-meta {
+  font-size: 11px;
+  color: var(--ink-mid);
+  font-variant-numeric: tabular-nums;
+}
+
 /* ── Check-in stepper ────────────────────────────────────────────────────── */
 .cd-checkin-shell {
   max-width: 600px;

@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react'
 import { CdModal } from '../cadence/CdModal'
+import { Icon } from '../cadence/Icon'
 import { useCycle } from '../../context/CycleContext'
 import { supabase } from '../../lib/supabase'
+import { keyResultsService } from '../../services/keyResults.service'
+import { suggestKRs, type KRSuggestion } from '../../services/aiSuggestions.service'
 import type { Objective, CreateObjectiveInput, ObjectiveStatus } from '../../types'
 
 const STATUS_OPTIONS: { value: ObjectiveStatus; label: string }[] = [
@@ -17,7 +20,8 @@ interface UnitOption { id: string; name: string }
 interface ObjectiveFormProps {
   open: boolean
   onClose: () => void
-  onSubmit: (data: CreateObjectiveInput) => Promise<void>
+  /** Return the new objective's id (string) for new objectives so AI KRs can be created. */
+  onSubmit: (data: CreateObjectiveInput) => Promise<string | void>
   objective?: Objective | null
 }
 
@@ -25,18 +29,23 @@ export function ObjectiveForm({ open, onClose, onSubmit, objective }: ObjectiveF
   const { activeCycle } = useCycle()
   const isEdit = !!objective
 
-  const [title, setTitle]         = useState(objective?.title ?? '')
-  const [description, setDescription] = useState(objective?.description ?? '')
-  const [unitId, setUnitId]       = useState<string>(objective?.unit_id ?? '')
-  const [parentId, setParentId]   = useState<string>((objective as any)?.parent_objective_id ?? '')
-  const [status, setStatus]       = useState<ObjectiveStatus>(objective?.status ?? 'on_track')
-  const [loading, setLoading]     = useState(false)
-  const [error, setError]         = useState('')
+  const [title, setTitle]               = useState(objective?.title ?? '')
+  const [description, setDescription]   = useState(objective?.description ?? '')
+  const [unitId, setUnitId]             = useState<string>(objective?.unit_id ?? '')
+  const [parentId, setParentId]         = useState<string>((objective as any)?.parent_objective_id ?? '')
+  const [status, setStatus]             = useState<ObjectiveStatus>(objective?.status ?? 'on_track')
+  const [loading, setLoading]           = useState(false)
+  const [error, setError]               = useState('')
 
-  const [units, setUnits]         = useState<UnitOption[]>([])
-  const [parentOpts, setParentOpts] = useState<ObjOption[]>([])
+  const [units, setUnits]               = useState<UnitOption[]>([])
+  const [parentOpts, setParentOpts]     = useState<ObjOption[]>([])
 
-  // Load units + potential parent objectives when modal opens
+  // AI suggestions state
+  const [suggestions, setSuggestions]   = useState<KRSuggestion[]>([])
+  const [accepted, setAccepted]         = useState<Set<number>>(new Set())
+  const [aiLoading, setAiLoading]       = useState(false)
+  const [aiError, setAiError]           = useState('')
+
   useEffect(() => {
     if (!open) return
     supabase.from('units').select('id, name').order('name').then(({ data }) => {
@@ -55,7 +64,6 @@ export function ObjectiveForm({ open, onClose, onSubmit, objective }: ObjectiveF
     }
   }, [open, activeCycle?.id, objective?.id])
 
-  // Reset form when objective prop changes
   useEffect(() => {
     setTitle(objective?.title ?? '')
     setDescription(objective?.description ?? '')
@@ -63,7 +71,34 @@ export function ObjectiveForm({ open, onClose, onSubmit, objective }: ObjectiveF
     setParentId((objective as any)?.parent_objective_id ?? '')
     setStatus(objective?.status ?? 'on_track')
     setError('')
+    setSuggestions([])
+    setAccepted(new Set())
+    setAiError('')
   }, [objective])
+
+  async function handleSuggest() {
+    if (title.trim().length < 8) return
+    setAiLoading(true)
+    setAiError('')
+    setSuggestions([])
+    try {
+      const results = await suggestKRs(title.trim(), description.trim() || undefined)
+      setSuggestions(results)
+      setAccepted(new Set(results.map((_, i) => i)))
+    } catch (e) {
+      setAiError(e instanceof Error ? e.message : 'Could not generate suggestions')
+    } finally {
+      setAiLoading(false)
+    }
+  }
+
+  function toggleAccepted(i: number) {
+    setAccepted(prev => {
+      const next = new Set(prev)
+      next.has(i) ? next.delete(i) : next.add(i)
+      return next
+    })
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -72,7 +107,7 @@ export function ObjectiveForm({ open, onClose, onSubmit, objective }: ObjectiveF
     setLoading(true)
     setError('')
     try {
-      await onSubmit({
+      const objectiveId = await onSubmit({
         title: title.trim(),
         description: description.trim() || undefined,
         unit_id: unitId || null,
@@ -80,9 +115,27 @@ export function ObjectiveForm({ open, onClose, onSubmit, objective }: ObjectiveF
         cycle_id: activeCycle.id,
         status,
       })
+
+      // Create accepted AI suggestions as KRs if we got back the objective ID
+      if (typeof objectiveId === 'string' && accepted.size > 0) {
+        const toCreate = suggestions.filter((_, i) => accepted.has(i))
+        await Promise.all(
+          toCreate.map(s =>
+            keyResultsService.create({
+              objective_id: objectiveId,
+              title: s.title,
+              target_type: s.target_type,
+              target_value: s.target_value,
+              unit: s.unit,
+            })
+          )
+        )
+      }
+
       onClose()
       if (!isEdit) {
         setTitle(''); setDescription(''); setUnitId(''); setParentId(''); setStatus('on_track')
+        setSuggestions([]); setAccepted(new Set()); setAiError('')
       }
     } catch (ex) {
       setError(ex instanceof Error ? ex.message : 'Something went wrong')
@@ -91,8 +144,10 @@ export function ObjectiveForm({ open, onClose, onSubmit, objective }: ObjectiveF
     }
   }
 
+  const canSuggest = !isEdit && title.trim().length >= 8
+
   return (
-    <CdModal open={open} onClose={onClose} title={isEdit ? 'Edit Objective' : 'New Objective'} width={520}>
+    <CdModal open={open} onClose={onClose} title={isEdit ? 'Edit Objective' : 'New Objective'} width={540}>
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
         {/* Title */}
@@ -120,6 +175,61 @@ export function ObjectiveForm({ open, onClose, onSubmit, objective }: ObjectiveF
             style={{ resize: 'vertical', minHeight: 64 }}
           />
         </label>
+
+        {/* AI suggest button */}
+        {canSuggest && (
+          <div>
+            <button
+              type="button"
+              className="cd-btn cd-btn--ghost cd-btn--sm cd-ai-suggest-btn"
+              onClick={handleSuggest}
+              disabled={aiLoading}
+            >
+              <Icon name="sparkle" size={13} />
+              {aiLoading ? 'Generating…' : suggestions.length > 0 ? 'Regenerate KRs' : 'Suggest key results with AI'}
+            </button>
+            {aiError && (
+              <p style={{ fontSize: 12, color: 'var(--bad)', margin: '6px 0 0' }}>{aiError}</p>
+            )}
+          </div>
+        )}
+
+        {/* AI suggestions panel */}
+        {suggestions.length > 0 && (
+          <div className="cd-ai-suggestions">
+            <div className="cd-ai-suggestions-header">
+              <Icon name="sparkle" size={12} />
+              <span>AI-suggested key results — select the ones to create</span>
+            </div>
+            <div className="cd-ai-suggestions-list">
+              {suggestions.map((s, i) => (
+                <label key={i} className={'cd-ai-suggestion-row' + (accepted.has(i) ? ' is-checked' : '')}>
+                  <input
+                    type="checkbox"
+                    checked={accepted.has(i)}
+                    onChange={() => toggleAccepted(i)}
+                    className="cd-ai-suggestion-chk"
+                  />
+                  <div className="cd-ai-suggestion-body">
+                    <span className="cd-ai-suggestion-title">{s.title}</span>
+                    <span className="cd-ai-suggestion-meta">
+                      {s.target_type === 'boolean'
+                        ? 'Done / not done'
+                        : s.target_type === 'percentage'
+                        ? `${s.target_value}%`
+                        : `${s.target_value.toLocaleString()}${s.unit ? ' ' + s.unit : ''}`}
+                    </span>
+                  </div>
+                </label>
+              ))}
+            </div>
+            {accepted.size === 0 && (
+              <p style={{ fontSize: 12, color: 'var(--ink-faint)', margin: '6px 0 0' }}>
+                No key results selected — objective will be created without KRs.
+              </p>
+            )}
+          </div>
+        )}
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           {/* Unit */}
@@ -185,7 +295,13 @@ export function ObjectiveForm({ open, onClose, onSubmit, objective }: ObjectiveF
             Cancel
           </button>
           <button type="submit" className="cd-btn cd-btn-primary" disabled={loading}>
-            {loading ? 'Saving…' : isEdit ? 'Save changes' : 'Create objective'}
+            {loading
+              ? 'Saving…'
+              : isEdit
+              ? 'Save changes'
+              : accepted.size > 0
+              ? `Create with ${accepted.size} KR${accepted.size !== 1 ? 's' : ''}`
+              : 'Create objective'}
           </button>
         </div>
       </form>
