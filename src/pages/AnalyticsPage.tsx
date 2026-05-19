@@ -13,6 +13,7 @@ import { PageHeader } from '../components/cadence/PageHeader'
 import { Card, CardHeader } from '../components/cadence/Card'
 import { Icon } from '../components/cadence/Icon'
 import { getISOWeek } from '../lib/cadenceUtils'
+import { usePageTitle } from '../hooks/usePageTitle'
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -87,6 +88,7 @@ function AlignmentBar({ aligned, total, label }: {
 // ── Main page ─────────────────────────────────────────────────────────────
 
 export function AnalyticsPage() {
+  usePageTitle('Analytics')
   const { user }  = useAuth()
   const { activeCycle, cycles, setActiveCycle } = useCycle()
   const navigate  = useNavigate()

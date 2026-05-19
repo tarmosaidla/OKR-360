@@ -11,6 +11,7 @@ import { Icon } from '../components/cadence/Icon'
 import { fmt, isOnTrack, makeTrend } from '../lib/cadenceUtils'
 import { createKPI, getAdminUnits, getUnitMembers } from '../services/kpis.service'
 import type { KPI, Person } from '../types/cadence'
+import { usePageTitle } from '../hooks/usePageTitle'
 
 // ── Delta chip (design-matching) ─────────────────────────────────────────
 
@@ -267,6 +268,7 @@ function AddKPIModal({ onClose, onCreated, cycleId }: {
 type GroupBy = 'role' | 'owner' | 'all'
 
 export function KPIsPage() {
+  usePageTitle('KPIs')
   const { activeCycle } = useCycle()
   const { kpis, loading, isAdmin, updateActual, reload } = useKPIs(activeCycle?.id ?? null)
   const [groupBy, setGroupBy] = useState<GroupBy>('role')

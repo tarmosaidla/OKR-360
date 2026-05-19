@@ -1,6 +1,7 @@
 import { useSearchParams } from 'react-router-dom'
 import { OneOnOnesPage } from './OneOnOnesPage'
 import { ScorecardPage } from './ScorecardPage'
+import { usePageTitle } from '../hooks/usePageTitle'
 
 const TABS = [
   { id: '1on1s',      label: '1:1s'       },
@@ -8,6 +9,7 @@ const TABS = [
 ]
 
 export function PeoplePage() {
+  usePageTitle('People')
   const [params, setParams] = useSearchParams()
   const tab = params.get('tab') ?? '1on1s'
 

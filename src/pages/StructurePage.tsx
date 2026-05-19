@@ -2,11 +2,13 @@ import { useSearchParams } from 'react-router-dom'
 import { OrgStructurePage } from './OrgStructurePage'
 import { CyclesPage } from './CyclesPage'
 import { MyUnitsPage } from './MyUnitsPage'
+import { BrandingPage } from './BrandingPage'
 
 const TABS = [
   { id: 'organisation', label: 'Organisation' },
   { id: 'cycles',       label: 'Cycles'       },
   { id: 'my-units',     label: 'My units'     },
+  { id: 'branding',     label: 'Branding'     },
 ]
 
 export function StructurePage() {
@@ -35,6 +37,7 @@ export function StructurePage() {
         {tab === 'organisation' && <OrgStructurePage />}
         {tab === 'cycles'       && <CyclesPage />}
         {tab === 'my-units'     && <MyUnitsPage />}
+        {tab === 'branding'     && <BrandingPage />}
       </div>
     </>
   )

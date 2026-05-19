@@ -101,8 +101,8 @@ function StepOrg({ draft, onChange, onNext, loading, error }: {
   )
 }
 
-function StepStructure({ onNext, onSkip }: { onNext: (units: string[]) => void; onSkip: () => void }) {
-  const [units, setUnits] = useState([''])
+function StepStructure({ onNext, onSkip, orgName }: { onNext: (units: string[]) => void; onSkip: () => void; orgName: string }) {
+  const [units, setUnits] = useState([orgName || ''])
 
   function updateUnit(i: number, val: string) {
     setUnits(prev => prev.map((u, idx) => idx === i ? val : u))
@@ -405,7 +405,7 @@ export function OnboardingWizard() {
           />
         )}
         {step === 'structure' && (
-          <StepStructure onNext={handleStructureNext} onSkip={() => setStep('invite')} />
+          <StepStructure onNext={handleStructureNext} onSkip={() => setStep('invite')} orgName={orgDraft.name} />
         )}
         {step === 'invite' && (
           <StepInvite onNext={handleInviteNext} onSkip={() => setStep('choice')} />

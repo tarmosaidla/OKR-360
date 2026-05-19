@@ -16,6 +16,7 @@ import { profileToPerson, getCurrentWeekIdx, getISOWeek } from '../lib/cadenceUt
 import { toggleTask, addQuickTask } from '../services/tasks.service'
 import type { Task, OneOnOne, Person } from '../types/cadence'
 import type { CadenceObjective } from '../types/cadence'
+import { usePageTitle } from '../hooks/usePageTitle'
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -188,6 +189,7 @@ interface Retro {
 }
 
 export function DashboardPage() {
+  usePageTitle('Dashboard')
   const navigate       = useNavigate()
   const { user, profile } = useAuth()
   const { activeCycle }   = useCycle()

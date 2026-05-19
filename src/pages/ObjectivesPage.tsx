@@ -7,6 +7,7 @@ import { MyFocusPage } from './MyFocusPage'
 import { CascadePage } from './CascadePage'
 import { MyContributionPage } from './MyContributionPage'
 import type { CreateObjectiveInput } from '../types'
+import { usePageTitle } from '../hooks/usePageTitle'
 
 const TABS = [
   { id: 'my-okrs',    label: 'My OKRs'   },
@@ -15,6 +16,7 @@ const TABS = [
 ]
 
 export function ObjectivesPage() {
+  usePageTitle('Objectives')
   const [params, setParams] = useSearchParams()
   const tab = params.get('tab') ?? 'my-okrs'
   const { user } = useAuth()
