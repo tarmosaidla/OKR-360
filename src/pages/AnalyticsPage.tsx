@@ -425,7 +425,7 @@ export function AnalyticsPage() {
             </div>
 
             {/* KPI health donut — 5 cols */}
-            <div className="cd-span-5" style={{ minHeight: 200 }}>
+            <div className="cd-span-5">
               <Card>
                 <CardHeader title="KPI health snapshot" sub="This cycle" />
                 {kpiPieData.length === 0 ? (

@@ -18,6 +18,7 @@ export function EmptyState({ icon = 'inbox', title, description, action }: Empty
       padding: '32px 16px',
       textAlign: 'center',
       minHeight: 120,
+      flex: 1,
       gap: 8,
     }}>
       <i className={`ti ti-${icon}`} style={{ fontSize: 24, color: 'var(--ink-faint)' }} />
