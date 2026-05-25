@@ -304,16 +304,16 @@ export function AnalyticsPage() {
                 {teamCiData.length === 0 ? (
                   <EmptyState icon="users" title="No team data" />
                 ) : (
-                  <div style={{ height: Math.max(120, teamCiData.length * 36 + 20) }}>
+                  <div style={{ height: Math.max(160, teamCiData.length * 36 + 20) }}>
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart
                         data={teamCiData}
                         layout="vertical"
-                        margin={{ top: 4, right: 40, left: 8, bottom: 4 }}
+                        margin={{ top: 8, right: 16, left: 100, bottom: 8 }}
                       >
                         <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" horizontal={false} />
                         <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 11, fill: 'var(--ink-faint)' }} unit="%" />
-                        <YAxis dataKey="name" type="category" tick={{ fontSize: 11, fill: 'var(--ink-faint)' }} width={90} />
+                        <YAxis dataKey="name" type="category" tick={{ fontSize: 11, fill: 'var(--ink-faint)' }} width={100} />
                         <Tooltip
                           formatter={(v: unknown) => [`${v}%`, 'Rate']}
                           contentStyle={{ background: 'var(--bg-elev)', border: '1px solid var(--line)', borderRadius: 8, fontSize: 12 }}
@@ -399,7 +399,7 @@ export function AnalyticsPage() {
                   </div>
                 )}
                 {data.unaligned.length > 0 && (
-                  <div style={{ borderTop: '1px solid var(--line)', paddingTop: 10, marginTop: 4 }}>
+                  <div style={{ borderTop: '0.5px solid var(--line)', padding: '10px 16px 16px', marginTop: 4 }}>
                     <button
                       className="cd-link"
                       style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12 }}
@@ -425,11 +425,11 @@ export function AnalyticsPage() {
             </div>
 
             {/* KPI health donut — 5 cols */}
-            <div className="cd-span-5">
+            <div className="cd-span-5" style={{ minHeight: 200 }}>
               <Card>
                 <CardHeader title="KPI health snapshot" sub="This cycle" />
                 {kpiPieData.length === 0 ? (
-                  <EmptyState icon="chart-bar" title="No KPI data" />
+                  <EmptyState icon="chart-bar" title="No KPI data" description="Add KPIs to see health snapshot" />
                 ) : (
                   <div style={{ height: 180, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <ResponsiveContainer width="60%" height="100%">
