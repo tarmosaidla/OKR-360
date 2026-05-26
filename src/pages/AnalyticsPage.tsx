@@ -68,13 +68,17 @@ function StatCard({ label, value, hint, tone }: {
   )
 }
 
-function AlignmentBar({ aligned, total, label }: {
-  aligned: number; total: number; label: string
+function AlignmentBar({ aligned, total, label, isLast = false }: {
+  aligned: number; total: number; label: string; isLast?: boolean
 }) {
   const pct = total > 0 ? Math.round((aligned / total) * 100) : 0
   const color = pct === 100 ? '#1F7A4D' : pct >= 70 ? '#9A6A11' : '#B23A3A'
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 12 }}>
+    <div style={{
+      display: 'flex', flexDirection: 'column', gap: 6,
+      padding: '10px 16px',
+      borderBottom: isLast ? 'none' : '0.5px solid var(--line)',
+    }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-mid)' }}>
         <span>{label}</span>
         <span>{aligned}/{total} aligned</span>
@@ -373,30 +377,31 @@ export function AnalyticsPage() {
             {/* Alignment health — 6 cols */}
             <div className="cd-span-7">
               <Card>
-                <CardHeader
-                  title="Alignment health"
-                  sub="% of objectives with a parent"
-                  action={
-                    <a className="cd-link" href="#" onClick={e => { e.preventDefault(); navigate('/cascade') }}>
-                      Cascade view <Icon name="chevronR" size={12} />
-                    </a>
-                  }
-                />
+                <div style={{ borderBottom: '0.5px solid var(--line)' }}>
+                  <CardHeader
+                    title="Alignment health"
+                    sub="% of objectives with a parent"
+                    action={
+                      <a className="cd-link" href="#" onClick={e => { e.preventDefault(); navigate('/cascade') }}>
+                        Cascade view <Icon name="chevronR" size={12} />
+                      </a>
+                    }
+                  />
+                </div>
                 {(data.alignment ?? []).length === 0 ? (
-                  <div style={{ padding: '8px 0' }}>
-                    <AlignmentBar label="All objectives" aligned={data.alignmentRate} total={100} />
-                  </div>
+                  <AlignmentBar label="All objectives" aligned={data.alignmentRate} total={100} isLast />
                 ) : (
-                  <div style={{ padding: '4px 0' }}>
-                    {data.alignment.map(row => (
+                  <>
+                    {data.alignment.map((row, i) => (
                       <AlignmentBar
                         key={row.level}
                         label={row.level_name}
                         aligned={row.aligned}
                         total={row.total}
+                        isLast={i === data.alignment.length - 1}
                       />
                     ))}
-                  </div>
+                  </>
                 )}
                 {data.unaligned.length > 0 && (
                   <div style={{ borderTop: '0.5px solid var(--line)', padding: '10px 16px 16px', marginTop: 4 }}>
