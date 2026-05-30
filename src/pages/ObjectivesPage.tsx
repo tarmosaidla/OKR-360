@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { objectivesService } from '../services/objectives.service'
@@ -21,6 +22,7 @@ export function ObjectivesPage() {
   const tab = params.get('tab') ?? 'my-okrs'
   const { user } = useAuth()
   const { objectivesModalOpen, setObjectivesModalOpen } = usePageActionStore()
+  const [refreshKey, setRefreshKey] = useState(0)
 
   function setTab(id: string) {
     setParams({ tab: id }, { replace: true })
@@ -29,6 +31,7 @@ export function ObjectivesPage() {
   async function handleCreate(data: CreateObjectiveInput) {
     if (!user) return
     const obj = await objectivesService.create({ ...data, owner_id: user.id })
+    setRefreshKey(k => k + 1)
     return obj.id
   }
 
@@ -47,7 +50,7 @@ export function ObjectivesPage() {
         ))}
       </div>
       <div className="cd-tab-content">
-        {tab === 'my-okrs'   && <MyFocusPage />}
+        {tab === 'my-okrs'   && <MyFocusPage key={refreshKey} />}
         {tab === 'cascade'   && <CascadePage />}
         {tab === 'alignment' && <MyContributionPage />}
       </div>

@@ -165,10 +165,8 @@ export function MyFocusPage() {
   const { activeCycle } = useCycle()
   const { profile } = useAuth()
 
-  const quarter = activeCycle ? parseInt(activeCycle.label.replace(/[^1-4]/g, '')) || 1 : 1
-  const year = activeCycle
-    ? parseInt(activeCycle.label.replace(/\D+(\d{4}).*/, '$1')) || new Date().getFullYear()
-    : new Date().getFullYear()
+  const quarter = activeCycle?.quarter ?? 1
+  const year = activeCycle?.year ?? new Date().getFullYear()
 
   const userId = profile?.id ?? null
   const { objectives, loading } = useMyFocusObjectives(activeCycle?.id ?? null, userId, quarter, year)
