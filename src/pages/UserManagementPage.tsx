@@ -6,7 +6,9 @@ import { useAuth } from '../context/AuthContext'
 import { Avatar } from '../components/cadence/Avatar'
 import { Icon } from '../components/cadence/Icon'
 import { profileToPerson } from '../lib/cadenceUtils'
+import { getPendingApprovals, approveUser, rejectUser } from '../services/pendingApprovals.service'
 import type { ManagedUser, UnitRole, UserStatus } from '../services/userManagement.service'
+import type { PendingApproval } from '../types/cadence'
 
 // ── Relative time helper ──────────────────────────────────────────────────
 
@@ -704,6 +706,96 @@ function UserDetail({
   )
 }
 
+// ── Pending approvals banner ──────────────────────────────────────────────
+
+function PendingApprovalsBanner({
+  orgId,
+  units,
+  onApproved,
+}: {
+  orgId: string | null
+  units: { id: string; name: string }[]
+  onApproved: () => void
+}) {
+  const [approvals, setApprovals] = useState<PendingApproval[]>([])
+  const [selectedUnit, setSelectedUnit] = useState<Record<string, string>>({})
+  const [working, setWorking] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!orgId) return
+    getPendingApprovals(orgId).then(setApprovals).catch(() => {})
+  }, [orgId])
+
+  if (approvals.length === 0) return null
+
+  async function handleApprove(a: PendingApproval) {
+    const unitId = selectedUnit[a.person_id] ?? units[0]?.id
+    if (!unitId) return
+    setWorking(a.person_id)
+    try {
+      await approveUser(a.person_id, unitId, 'member', '')
+      setApprovals(prev => prev.filter(x => x.person_id !== a.person_id))
+      onApproved()
+    } finally {
+      setWorking(null)
+    }
+  }
+
+  async function handleReject(a: PendingApproval) {
+    setWorking(a.person_id)
+    try {
+      await rejectUser(a.person_id)
+      setApprovals(prev => prev.filter(x => x.person_id !== a.person_id))
+    } finally {
+      setWorking(null)
+    }
+  }
+
+  return (
+    <div className="cd-approvals-banner">
+      <div className="cd-approvals-title">
+        <Icon name="bell" size={14} />
+        {approvals.length} pending approval{approvals.length !== 1 ? 's' : ''}
+      </div>
+      {approvals.map(a => (
+        <div key={a.person_id} className="cd-approvals-row">
+          <div className="cd-approvals-info">
+            <strong>{a.full_name}</strong>
+            <span className="cd-approvals-email">{a.email}</span>
+            <span className="cd-approvals-date">
+              {new Date(a.requested_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+            </span>
+          </div>
+          <select
+            className="cd-um-select"
+            style={{ minWidth: 140 }}
+            value={selectedUnit[a.person_id] ?? units[0]?.id ?? ''}
+            onChange={e => setSelectedUnit(prev => ({ ...prev, [a.person_id]: e.target.value }))}
+          >
+            {units.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+          </select>
+          <button
+            type="button"
+            className="cd-btn cd-btn-primary"
+            disabled={working === a.person_id}
+            onClick={() => handleApprove(a)}
+          >
+            Approve
+          </button>
+          <button
+            type="button"
+            className="cd-btn"
+            disabled={working === a.person_id}
+            onClick={() => handleReject(a)}
+          >
+            Reject
+          </button>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────
 
 export function UserManagementPage() {
@@ -758,8 +850,19 @@ export function UserManagementPage() {
     </div>
   )
 
+  function handleReload() {
+    window.location.reload()
+  }
+
   return (
     <div className="cd-page" style={{ gap: 0, overflow: 'hidden', height: '100%', paddingBottom: 0 }}>
+      {isGlobalAdmin && (
+        <PendingApprovalsBanner
+          orgId={orgId}
+          units={flatUnits}
+          onApproved={handleReload}
+        />
+      )}
       {!isGlobalAdmin && scopeUnitNames.length > 0 && (
         <div className="cd-um-scope-banner">
           <Icon name="info" size={14} />

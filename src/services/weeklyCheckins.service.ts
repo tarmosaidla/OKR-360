@@ -86,6 +86,8 @@ export interface SubmitCheckinInput {
   cycle_id: string
   new_value: number
   confidence: number
+  will_score: number | null
+  will_action: string | null
   has_blocker: boolean
   blocker_text: string | null
   note: string | null
@@ -103,6 +105,8 @@ export async function submitCheckin(input: SubmitCheckinInput): Promise<void> {
         cycle_id:      input.cycle_id,
         new_value:     input.new_value,
         confidence:    input.confidence,
+        will_score:    input.will_score || null,
+        will_action:   input.will_action || null,
         has_blocker:   input.has_blocker,
         blocker_text:  input.blocker_text || null,
         note:          input.note || null,

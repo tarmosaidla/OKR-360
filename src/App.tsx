@@ -34,6 +34,9 @@ import { ObjectivesPage } from './pages/ObjectivesPage'
 import { PeoplePage } from './pages/PeoplePage'
 import { StructurePage } from './pages/StructurePage'
 import { AccountPage } from './pages/AccountPage'
+import { RetroPage } from './pages/RetroPage'
+import { HistoryPage } from './pages/HistoryPage'
+import { PendingApprovalPage } from './pages/PendingApprovalPage'
 
 export default function App() {
   return (
@@ -53,6 +56,7 @@ export default function App() {
                 <Route element={<ProtectedRoute />}>
                   <Route path="/onboarding"         element={<OnboardingWizard />} />
                   <Route path="/onboarding/profile" element={<ProfileSetupPage />} />
+                  <Route path="/pending-approval"   element={<PendingApprovalPage />} />
                 </Route>
 
                 {/* Protected routes inside AppShell */}
@@ -82,6 +86,8 @@ export default function App() {
                     <Route path="/objectives"                  element={<ObjectivesPage />} />
                     <Route path="/people"                      element={<PeoplePage />} />
                     <Route path="/settings/account"            element={<AccountPage />} />
+                    <Route path="/retro"                       element={<RetroPage />} />
+                    <Route path="/history"                     element={<HistoryPage />} />
                   </Route>
                 </Route>
 

@@ -15,6 +15,7 @@ import { confidenceColor } from '../lib/colors'
 import { profileToPerson, getCurrentWeekIdx, getISOWeek } from '../lib/cadenceUtils'
 import { toggleTask, addQuickTask } from '../services/tasks.service'
 import { usePageActionStore } from '../stores/pageActionStore'
+import { useCascadeChain } from '../hooks/useCascadeChain'
 import type { Task, OneOnOne, Person } from '../types/cadence'
 import type { CadenceObjective } from '../types/cadence'
 import { usePageTitle } from '../hooks/usePageTitle'
@@ -156,6 +157,36 @@ function RetroCol({ label, tone, items }: { label: string; tone: string; items: 
       <ul>
         {items.map((it, i) => <li key={i}>{it}</li>)}
       </ul>
+    </div>
+  )
+}
+
+function ImpactStrip({ objectiveId }: { objectiveId: string | null }) {
+  const { chain } = useCascadeChain(objectiveId)
+  if (chain.length < 2) return null
+
+  return (
+    <div className="cd-impact-strip">
+      <span className="cd-impact-label">
+        <Icon name="zap" size={12} /> Your impact chain
+      </span>
+      {chain.map((obj, i) => {
+        const isLast = i === chain.length - 1
+        const level = (obj as any).level
+        const colorVar = level?.color ?? 'var(--ink-soft)'
+        return (
+          <span key={obj.id} style={{ display: 'contents' }}>
+            <span
+              className="cd-impact-pill"
+              style={{ borderColor: colorVar, color: colorVar }}
+            >
+              {level?.name ? <span className="cd-impact-pill-level">{level.name}</span> : null}
+              {obj.title}
+            </span>
+            {!isLast && <span className="cd-impact-sep"><Icon name="chevronR" size={11} /></span>}
+          </span>
+        )
+      })}
     </div>
   )
 }
@@ -439,6 +470,9 @@ export function DashboardPage() {
           <span style={{ marginLeft: 'auto', fontSize: 12 }}>Go to review →</span>
         </div>
       )}
+
+      {/* Impact chain strip */}
+      <ImpactStrip objectiveId={myObjs[0]?.id ?? null} />
 
       <div className="cd-grid">
 

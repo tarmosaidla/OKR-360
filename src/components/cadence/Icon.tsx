@@ -5,6 +5,7 @@ type IconName =
   | 'flag' | 'sparkle' | 'calendar' | 'settings' | 'grid'
   | 'link' | 'x' | 'star' | 'users' | 'bell' | 'alertTriangle'
   | 'mail' | 'shield' | 'slash' | 'eye' | 'eyeOff' | 'checkCircle' | 'chartLine' | 'sitemap'
+  | 'history' | 'zap' | 'hourglass' | 'thumbsUp'
 
 const PATHS: Record<IconName, React.ReactNode> = {
   dashboard:  <><rect x="3" y="3"  width="7" height="9"  rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/></>,
@@ -43,6 +44,10 @@ const PATHS: Record<IconName, React.ReactNode> = {
   checkCircle:   <><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></>,
   chartLine:     <><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></>,
   sitemap:       <><rect x="9" y="2" width="6" height="5" rx="1"/><rect x="2" y="15" width="6" height="5" rx="1"/><rect x="16" y="15" width="6" height="5" rx="1"/><path d="M12 7v3.5M5 15v-2.5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2V15"/></>,
+  history:       <><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/><path d="M3.05 11a9 9 0 0 1 .44-2.5"/></>,
+  zap:           <><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></>,
+  hourglass:     <><path d="M5 22h14M5 2h14M17 22v-4.2a5 5 0 0 0-1.46-3.54L12 11 8.46 14.26A5 5 0 0 0 7 17.8V22M17 2v4.2a5 5 0 0 1-1.46 3.54L12 13 8.46 9.74A5 5 0 0 1 7 6.2V2"/></>,
+  thumbsUp:      <><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></>,
 }
 
 export function Icon({ name, size = 16 }: { name: IconName; size?: number }) {

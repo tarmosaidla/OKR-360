@@ -33,6 +33,7 @@ export interface OrgSettings {
   allow_cross_level: boolean
   individual_level_enabled: boolean
   show_alignment_gaps: boolean
+  require_approval?: boolean
 }
 
 export interface Person {
@@ -198,6 +199,8 @@ export interface WeeklyCheckin {
   cycle_id: string
   new_value: number
   confidence: number
+  will_score: number | null
+  will_action: string | null
   has_blocker: boolean
   blocker_text: string | null
   note: string | null
@@ -236,9 +239,31 @@ export interface AppNotification {
 export interface CheckinDraft {
   new_value: number
   confidence: number  // 0 = not yet set
+  will_score: number  // 0 = not yet set
+  will_action: string
   has_blocker: boolean
   blocker_text: string
   note: string
+}
+
+export interface IndividualRetro {
+  id: string
+  person_id: string
+  week_number: number
+  year: number
+  parking_lot: string | null
+  top_work: string | null
+  notes_text: string | null
+  feedforward: string | null
+}
+
+export interface PendingApproval {
+  id: string
+  person_id: string
+  email: string
+  full_name: string
+  org_id: string
+  requested_at: string
 }
 
 // ── People-unit membership ────────────────────────────────────────────────

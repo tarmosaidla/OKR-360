@@ -5,6 +5,7 @@ import { PageHeader } from '../components/cadence/PageHeader'
 import { ProgressBar } from '../components/cadence/ProgressBar'
 import { Icon } from '../components/cadence/Icon'
 import { ConfidencePicker } from '../components/checkins/ConfidencePicker'
+import { WillScorePicker } from '../components/checkins/WillScorePicker'
 import { StreakBadge } from '../components/checkins/StreakBadge'
 import { fmt } from '../lib/cadenceUtils'
 import type { CheckinKR, CheckinDraft } from '../types/cadence'
@@ -108,6 +109,25 @@ function KrCard({ kr, draft, onChange }: {
           value={draft.confidence}
           onChange={v => onChange({ confidence: v })}
         />
+      </div>
+
+      {/* Will score */}
+      <div className="cd-checkin-field">
+        <label className="cd-checkin-field-lbl">Determination (1 = low effort, 10 = full drive)</label>
+        <WillScorePicker
+          value={draft.will_score}
+          onChange={v => onChange({ will_score: v })}
+        />
+        {draft.will_score > 0 && (
+          <input
+            type="text"
+            className="cd-checkin-value-input"
+            style={{ marginTop: 8, width: '100%' }}
+            placeholder="What will you do to move this forward? (optional)"
+            value={draft.will_action}
+            onChange={e => onChange({ will_action: e.target.value })}
+          />
+        )}
       </div>
 
       {/* Blocker toggle */}

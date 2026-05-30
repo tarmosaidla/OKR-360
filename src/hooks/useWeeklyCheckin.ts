@@ -36,6 +36,8 @@ export function useWeeklyCheckin() {
         initialDrafts.set(kr.id, {
           new_value:    existing?.new_value   ?? kr.current_value,
           confidence:   existing?.confidence  ?? 0,
+          will_score:   existing?.will_score  ?? 0,
+          will_action:  existing?.will_action ?? '',
           has_blocker:  existing?.has_blocker ?? false,
           blocker_text: existing?.blocker_text ?? '',
           note:         existing?.note ?? '',
@@ -57,7 +59,7 @@ export function useWeeklyCheckin() {
     setDrafts(prev => {
       const next = new Map(prev)
       const existing = next.get(krId) ?? {
-        new_value: 0, confidence: 0, has_blocker: false, blocker_text: '', note: '',
+        new_value: 0, confidence: 0, will_score: 0, will_action: '', has_blocker: false, blocker_text: '', note: '',
       }
       next.set(krId, { ...existing, ...draft })
       return next
@@ -81,6 +83,8 @@ export function useWeeklyCheckin() {
           cycle_id:      activeCycle.id,
           new_value:     draft.new_value,
           confidence:    draft.confidence || 5,
+          will_score:    draft.will_score || null,
+          will_action:   draft.will_action || null,
           has_blocker:   draft.has_blocker,
           blocker_text:  draft.blocker_text || null,
           note:          draft.note || null,

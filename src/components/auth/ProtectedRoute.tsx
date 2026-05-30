@@ -14,6 +14,11 @@ export function ProtectedRoute() {
     return <Navigate to="/settings/security?prompt=change" replace />
   }
 
+  // Self-registered user awaiting admin approval
+  if (profile?.status === 'awaiting_approval' && pathname !== '/pending-approval') {
+    return <Navigate to="/pending-approval" replace />
+  }
+
   // Invited user who hasn't completed profile setup yet
   if (orgId && profile?.status === 'pending' && !pathname.startsWith('/onboarding/profile')) {
     return <Navigate to="/onboarding/profile" replace />

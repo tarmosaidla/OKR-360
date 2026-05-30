@@ -4214,3 +4214,217 @@ kbd.cd-kbd {
 .cd-branding-hex-input { width: 110px; font-family: var(--font-mono); font-size: 13px; }
 
 .cd-branding-saved { font-size: 12px; color: var(--green); font-weight: 500; margin: 0; }
+
+/* ── Impact strip (Dashboard) ───────────────────────────────────────────── */
+.cd-impact-strip {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  background: var(--bg-sub);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 12px;
+}
+.cd-impact-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ink-faint);
+  font-weight: 500;
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+.cd-impact-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border: 1px solid;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cd-impact-pill-level {
+  font-weight: 600;
+  opacity: 0.7;
+  margin-right: 2px;
+}
+.cd-impact-sep { color: var(--ink-faint); display: flex; align-items: center; }
+
+/* ── Retro fields (RetroPage) ───────────────────────────────────────────── */
+.cd-retro-field { display: flex; flex-direction: column; gap: 6px; }
+.cd-retro-field-lbl {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  padding-left: 8px;
+  border-left: 3px solid var(--line);
+}
+.cd-retro-ta {
+  width: 100%;
+  min-height: 100px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+  transition: border-color 120ms;
+}
+.cd-retro-ta:focus { outline: none; border-color: var(--accent); }
+.cd-retro-ta::placeholder { color: var(--ink-faint); }
+
+/* ── History page ───────────────────────────────────────────────────────── */
+.cd-hist-shell {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+.cd-hist-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: sticky;
+  top: 0;
+}
+.cd-hist-kr-btn {
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  cursor: pointer;
+  transition: background 100ms, border-color 100ms;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.cd-hist-kr-btn:hover { background: var(--bg-sub); }
+.cd-hist-kr-btn.is-sel {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+.cd-hist-kr-btn-title { font-size: 13px; font-weight: 600; color: var(--ink); line-height: 1.3; }
+.cd-hist-kr-btn-sub { font-size: 11px; color: var(--ink-faint); }
+
+.cd-hist-right-wrap { min-width: 0; }
+.cd-hist-right { display: flex; flex-direction: column; gap: 12px; }
+.cd-hist-kr-title { font-size: 16px; font-weight: 700; color: var(--ink); }
+.cd-hist-kr-sub { font-size: 12px; color: var(--ink-soft); margin-top: -8px; }
+
+.cd-hist-list { display: flex; flex-direction: column; gap: 0; }
+.cd-hist-row {
+  display: grid;
+  grid-template-columns: 60px 100px 40px 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+}
+.cd-hist-row:last-child { border-bottom: none; }
+.cd-hist-week-label { font-size: 11px; color: var(--ink-faint); font-weight: 500; }
+.cd-hist-value { font-weight: 600; color: var(--ink); }
+.cd-hist-conf { display: flex; }
+.cd-hist-note { color: var(--ink-soft); font-size: 12px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.cd-hist-blocker-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--bad);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 1px 6px;
+  border: 1px solid color-mix(in oklab, var(--bad) 30%, transparent);
+  border-radius: 4px;
+}
+
+/* ── Pending approval page ──────────────────────────────────────────────── */
+.cd-pending-screen {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: var(--bg-sub);
+  padding: 40px 20px;
+}
+.cd-pending-card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 48px 40px;
+  max-width: 440px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+.cd-pending-icon {
+  color: var(--ink-faint);
+  margin-bottom: 8px;
+}
+.cd-pending-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+.cd-pending-body {
+  font-size: 14px;
+  color: var(--ink-soft);
+  line-height: 1.6;
+  margin: 0;
+}
+.cd-pending-hint {
+  font-size: 12px;
+  color: var(--ink-faint);
+  margin: 0;
+}
+
+/* ── Pending approvals banner (UserManagementPage) ──────────────────────── */
+.cd-approvals-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 16px;
+  background: color-mix(in oklab, var(--warn) 10%, var(--bg));
+  border-bottom: 1px solid color-mix(in oklab, var(--warn) 30%, transparent);
+}
+.cd-approvals-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.cd-approvals-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+.cd-approvals-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 200px;
+  font-size: 13px;
+}
+.cd-approvals-email { color: var(--ink-soft); font-size: 12px; }
+.cd-approvals-date { color: var(--ink-faint); font-size: 11px; margin-left: auto; }
