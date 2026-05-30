@@ -77,3 +77,33 @@ accurate but the name is misleading.
 
 Consider renaming `OrgLevel` → `HierarchyLevel` in a future cleanup PR.
 Grep scope: `src/types/cadence.ts` + everywhere `OrgLevel` is imported.
+
+---
+
+## 4. "Powered by Supabase" footer in invitation emails
+
+**Status:** Blocked by plan (2026-05-30)  
+**Effort:** Zero code — requires Supabase Pro plan ($25/month)
+
+All transactional emails sent by Supabase Auth (invitation, password reset,
+magic link) include a "powered by Supabase ⚡" footer. This footer:
+
+- Cannot be removed via email template customisation
+- Cannot be overridden by custom SMTP settings alone
+- Is removed only on the Supabase **Pro plan** (`$25/month`) which allows
+  "Remove Supabase branding from emails"
+
+### Current state
+
+The invitation email now has a personalised subject and body
+(`You've been invited to join <OrgName> on OKR 360`) with a correctly branded
+button, but the Supabase footer still appears.
+
+### Resolution
+
+Upgrade the Supabase project to Pro before public launch, then:
+1. Go to Project Settings → Auth → SMTP settings — optionally configure
+   custom SMTP (SendGrid, Resend, etc.) for full delivery control
+2. OR rely on Supabase's SMTP with branding removed on Pro
+
+Custom SMTP also removes the daily email sending limit (currently 3/hour on free plan).

@@ -91,10 +91,21 @@ Deno.serve(async (req: Request) => {
       const { email, unit_id, role = 'member', org_id } = payload
       if (!email || !unit_id || !org_id) throw new Error('email, unit_id, and org_id are required')
 
+      // Fetch org name for personalised email subject/body
+      const { data: orgRow } = await supabaseAdmin
+        .from('organisations')
+        .select('name')
+        .eq('id', org_id)
+        .single()
+      const orgName = orgRow?.name ?? 'your organisation'
+
       const siteUrl = Deno.env.get('SITE_URL') ?? 'http://localhost:5173'
       const { data: inviteData, error: inviteErr } = await supabaseAdmin.auth.admin.inviteUserByEmail(
         email,
-        { redirectTo: `${siteUrl}/onboarding/profile` },
+        {
+          data: { org_name: orgName },
+          redirectTo: `${siteUrl}/onboarding/profile`,
+        },
       )
       if (inviteErr) throw inviteErr
 
